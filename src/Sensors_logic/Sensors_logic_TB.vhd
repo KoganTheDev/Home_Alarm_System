@@ -1,0 +1,7 @@
+--------------------- Title ------------------------
+-- Project Name: HA_System
+-- File Name: Sensors_logic_TB.vhd
+-- Author: Yuval Kogan
+-- Ver: 0
+-- Created Date: 23/11/25
+----------------------------------------------------

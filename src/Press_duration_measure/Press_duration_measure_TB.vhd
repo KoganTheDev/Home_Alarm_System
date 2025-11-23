@@ -1,0 +1,7 @@
+--------------------- Title ------------------------
+-- Project Name: HA_System
+-- File Name: Press_duration_measure_TB.vhd
+-- Author: Roni Shifrin
+-- Ver: 0
+-- Created Date: 23/11/25
+----------------------------------------------------
