@@ -15,7 +15,7 @@ use ieee.numeric_std.all;
 entity Code_register is
     generic (
         N : INTEGER := 2;
-        PASSWORD : STD_LOGIC_VECTOR(1 DOWNTO 0) := "01"
+        PASSWORD : STD_LOGIC_VECTOR((N - 1) DOWNTO 0) := "01"
     );
 
     port (
@@ -26,7 +26,7 @@ entity Code_register is
         
         Code_ready   : OUT STD_LOGIC;                           -- Used to check if the current code size is the same as the PASSWORD's
         code_match   : OUT STD_LOGIC;                           -- If PASSWORD == code_vector, this flag turns on. otherwise, 0.
-        code_vector  : OUT STD_LOGIC_VECTOR(N - 1 DOWNTO 0)     -- Outputs the current code's state
+        code_vector  : OUT STD_LOGIC_VECTOR((N - 1) DOWNTO 0)     -- Outputs the current code's state
     );
 end Code_register;
 
@@ -34,7 +34,7 @@ end Code_register;
 architecture behavior of Code_register is
     
     -- Internal Signal to hold the actual shift register state
-    signal code_reg_int  : STD_LOGIC_VECTOR(N - 1 DOWNTO 0) := (others => '0');
+    signal code_reg_int  : STD_LOGIC_VECTOR((N - 1) DOWNTO 0) := (others => '0');
     
     -- Internal signal for the counter state (0 to N)
     signal bit_count_int : INTEGER range 0 to N := 0; 

@@ -2,8 +2,8 @@
 -- Project Name: HA_System
 -- File Name: Sensors_logic_TB.vhd
 -- Author: Yuval Kogan
--- Ver: 0
--- Created Date: 23/11/25
+-- Ver: 1
+-- Created Date: 27/11/25
 ----------------------------------------------------
 
 
@@ -36,7 +36,7 @@ architecture test_bench of Sensors_logic_TB is
     -- Signal Declarations
     constant CLK_PERIOD : time := 10 ns; 
 
-    -- Debounce threshold is 3, meaning 4 clock cycles (0, 1, 2, 3) are required for a change.
+    -- Debounce threshold is 2, meaning 3 clock cycles (0, 1, 2) are required for a change.
     constant T_DEBOUNCE_TIME : time := CLK_PERIOD * 3; 
     constant T_PRE_DEBOUNCE  : time := CLK_PERIOD * 2; -- Time right before the change
 
@@ -83,7 +83,8 @@ begin
     STIM_GEN: process
     begin
         
-        report "--- Starting Simulation: Debounce requires 3 Clock Cycles ---" severity note;
+        report "--- Starting Comprehensive Sensor Debounce Test Suite ---" severity note;
+        report "--- Debounce requires 3 Clock Cycles (threshold=2) ---" severity note;
 
         -- Initial conditions
         TB_door_sens <= '0';
@@ -104,8 +105,10 @@ begin
         -- Wait for one clock cycle to verify reset state persists
         wait for CLK_PERIOD;
         assert TB_door_clean   = '0' report "Error: door_clean not cleared by Rst" severity error;
+        assert TB_window_clean = '0' report "Error: window_clean not cleared by Rst" severity error;
+        assert TB_motion_clean = '0' report "Error: motion_clean not cleared by Rst" severity error;
         assert TB_detected     = '0' report "Error: detected not cleared by Rst" severity error;
-
+        report "PHASE 0: Reset verified - all outputs cleared" severity note;
 
         
         -- PHASE 1: FULL DEBOUNCE TIMING CHECK (Door ON)
@@ -121,6 +124,7 @@ begin
         wait for CLK_PERIOD; -- Total time elapsed: T_DEBOUNCE_TIME (3 cycles)
         assert TB_door_clean = '1' report "Error: Door failed to debounce ON after 3 cycles" severity error;
         assert TB_detected = '0' report "Error: Detected high with only 1 sensor" severity error;
+        report "PHASE 1: Door debounced successfully after 3 cycles" severity note;
 
         
         -- PHASE 2: BOUNCE REJECTION AND COUNTER RESET
@@ -139,6 +143,7 @@ begin
         -- Counter should have reset, and door_clean should remain '1'
         wait for CLK_PERIOD;
         assert TB_door_clean = '1' report "Error: Door debounced OFF due to short pulse" severity error;
+        report "PHASE 2: Bounce correctly rejected" severity note;
 
 
         -- PHASE 3: ASYMMETRIC DETECTION TIMING CHECK (Door (1) + Window (0->1))
@@ -153,10 +158,11 @@ begin
         assert TB_window_clean = '0' report "Error: Window debounced too quickly" severity error;
         assert TB_detected     = '0' report "Error: Detected asserted before second sensor stabilized (3 cycles)" severity error;
 
-        -- Check 2: Must detect exactly after the 3th cycle
-        wait for CLK_PERIOD; -- Total time elapsed for Window: 4 cycles
-        assert TB_window_clean = '1' report "Error: Window failed to debounce ON after 4 cycles" severity error;
+        -- Check 2: Must detect exactly after the 3rd cycle
+        wait for CLK_PERIOD; -- Total time elapsed for Window: 3 cycles
+        assert TB_window_clean = '1' report "Error: Window failed to debounce ON after 3 cycles" severity error;
         assert TB_detected     = '1' report "Error: Detected failed to assert immediately after 2nd sensor stabilization" severity failure;
+        report "PHASE 3: Detection asserted with 2 sensors (Door + Window)" severity note;
 
         
         -- PHASE 4: DETECTION DE-ASSERTION CHECK (Door (1) + Window (1->0))
@@ -171,27 +177,33 @@ begin
         assert TB_window_clean = '1' report "Error: Window debounced OFF too quickly" severity error;
         assert TB_detected     = '1' report "Error: Detected de-asserted before sensor went low" severity error;
         
-        -- Check 2: Must de-assert detection exactly after the 3th cycle
+        -- Check 2: Must de-assert detection exactly after the 3rd cycle
         wait for CLK_PERIOD; -- Total time elapsed for Window OFF: 3 cycles
-        assert TB_window_clean = '0' report "Error: Window failed to debounce OFF after 4 cycles" severity error;
+        assert TB_window_clean = '0' report "Error: Window failed to debounce OFF after 3 cycles" severity error;
         assert TB_detected     = '0' report "Error: Detected failed to de-assert after sensor went low" severity failure;
+        report "PHASE 4: Detection de-asserted correctly when only 1 sensor remains" severity note;
 
 
         -- PHASE 5: COMPLEX DETECTION COMBINATIONS
-        report "PHASE 5: Testing remaining 2-of-3 combinations" severity note;
+        report "PHASE 5: Testing Door + Motion Combination" severity note;
 
-        -- Setup: Window OFF, Motion ON (001)
+        -- Setup: Window OFF, Motion ON (001 -> door=1, motion=1)
         TB_window_sens <= '0';
         TB_motion_sens <= '1';
         wait for T_DEBOUNCE_TIME;
         
-        -- Test 5.1: Door (1) + Motion (1) -> Current state
+        -- Test 5.1: Door (1) + Motion (1) -> Should detect
         assert TB_door_clean   = '1' report "Error: Door expected '1'" severity error;
         assert TB_window_clean = '0' report "Error: Window expected '0'" severity error;
         assert TB_motion_clean = '1' report "Error: Motion expected '1'" severity error;
         assert TB_detected     = '1' report "Error: Door & Motion failed to detect" severity failure;
+        report "PHASE 5.1: Door + Motion detection confirmed" severity note;
 
-        -- Test 5.2: Window (0->1) + Motion (1) - Clear Door, Set Window
+
+        -- PHASE 6: WINDOW + MOTION COMBINATION
+        report "PHASE 6: Testing Window + Motion Combination" severity note;
+        
+        -- Clear Door, Set Window (011 -> door=0, window=1, motion=1)
         TB_door_sens   <= '0';
         TB_window_sens <= '1';
         wait for T_DEBOUNCE_TIME;
@@ -200,22 +212,99 @@ begin
         assert TB_window_clean = '1' report "Error: Window failed to debounce ON" severity error;
         assert TB_motion_clean = '1' report "Error: Motion expected '1'" severity error;
         assert TB_detected     = '1' report "Error: Window & Motion failed to detect" severity failure;
+        report "PHASE 6: Window + Motion detection confirmed" severity note;
 
 
-        -- PHASE 6: FINAL SHUTDOWN
-        report "PHASE 6: Final Shutdown" severity note;
+        -- PHASE 7: ALL THREE SENSORS ACTIVE
+        report "PHASE 7: Testing All Three Sensors Active (111)" severity note;
+        
+        -- Activate Door as well (111 -> all active)
+        TB_door_sens <= '1';
+        wait for T_DEBOUNCE_TIME;
+        
+        assert TB_door_clean   = '1' report "Error: Door expected '1'" severity error;
+        assert TB_window_clean = '1' report "Error: Window expected '1'" severity error;
+        assert TB_motion_clean = '1' report "Error: Motion expected '1'" severity error;
+        assert TB_detected     = '1' report "Error: All three sensors should detect" severity failure;
+        report "PHASE 7: All three sensors active - detection confirmed" severity note;
 
-        -- All three OFF (000)
+
+        -- PHASE 8: TRANSITION FROM ALL THREE TO SINGLE SENSOR
+        report "PHASE 8: Transition from 3 sensors to 1 sensor (should de-assert)" severity note;
+        
+        -- Turn off Window and Motion, keep Door (100)
+        TB_window_sens <= '0';
+        TB_motion_sens <= '0';
+        wait for T_DEBOUNCE_TIME;
+        
+        assert TB_door_clean   = '1' report "Error: Door expected '1'" severity error;
+        assert TB_window_clean = '0' report "Error: Window expected '0'" severity error;
+        assert TB_motion_clean = '0' report "Error: Motion expected '0'" severity error;
+        assert TB_detected     = '0' report "Error: Detection should be OFF with only 1 sensor" severity failure;
+        report "PHASE 8: Detection correctly de-asserted with only 1 sensor" severity note;
+
+
+        -- PHASE 9: RAPID TOGGLING (Bounce Stress Test)
+        report "PHASE 9: Rapid Toggling Stress Test" severity note;
+        
+        -- Rapid window toggles (should be ignored if bounce is < 3 cycles)
+        TB_window_sens <= '1';
+        wait for CLK_PERIOD;  -- 1 cycle
+        TB_window_sens <= '0';
+        wait for CLK_PERIOD;  -- 2 cycles total
+        TB_window_sens <= '1';
+        wait for CLK_PERIOD;  -- 3 cycles - should stabilize now
+        wait for CLK_PERIOD;  -- Let it settle
+        
+        -- Window should now be stable at '1', and with Door='1', should detect
+        assert TB_window_clean = '1' report "Error: Window failed to stabilize" severity error;
+        assert TB_detected     = '1' report "Error: Should detect with Door + Window" severity failure;
+        report "PHASE 9: Rapid toggling handled correctly" severity note;
+
+
+        -- PHASE 10: COMPLETE SYSTEM SHUTDOWN
+        report "PHASE 10: Complete Shutdown Test" severity note;
+
+        -- All sensors OFF (000)
         TB_door_sens   <= '0';
         TB_window_sens <= '0';
         TB_motion_sens <= '0';
         wait for T_DEBOUNCE_TIME;
         
+        assert TB_door_clean   = '0' report "Error: Door failed to debounce OFF" severity error;
+        assert TB_window_clean = '0' report "Error: Window failed to debounce OFF" severity error;
+        assert TB_motion_clean = '0' report "Error: Motion failed to debounce OFF" severity error;
         assert TB_detected     = '0' report "Error: Detected remained high at shutdown" severity failure;
+        report "PHASE 10: All sensors deactivated, detected correctly de-asserted" severity note;
+
+
+        -- PHASE 11: RESET DURING DETECTION
+        report "PHASE 11: Testing Reset While Detection Active" severity note;
+        
+        -- Activate two sensors again
+        TB_door_sens   <= '1';
+        TB_window_sens <= '1';
+        wait for T_DEBOUNCE_TIME;
+        
+        assert TB_detected = '1' report "Error: Detection should be active" severity error;
+        
+        -- Apply reset
+        TB_Rst <= '1';
+        wait for CLK_PERIOD;
+        TB_Rst <= '0';
+        wait for CLK_PERIOD;
+        
+        -- All should be cleared
+        assert TB_door_clean   = '0' report "Error: Reset failed to clear door_clean" severity error;
+        assert TB_window_clean = '0' report "Error: Reset failed to clear window_clean" severity error;
+        assert TB_motion_clean = '0' report "Error: Reset failed to clear motion_clean" severity error;
+        assert TB_detected     = '0' report "Error: Reset failed to clear detected" severity error;
+        report "PHASE 11: Reset during detection clears all signals correctly" severity note;
+
         
         -- End Simulation
         wait for CLK_PERIOD * 5;
-        report "--- Simulation Complete: All major states, combinations, and timing verified ---" severity note;
+        report "--- Simulation Complete: ALL comprehensive test cases PASSED ---" severity note;
         wait; 
     end process STIM_GEN;
 

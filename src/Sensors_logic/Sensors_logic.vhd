@@ -2,7 +2,7 @@
 -- Project Name: HA_System
 -- File Name: Sensors_logic.vhd
 -- Author: Yuval Kogan
--- Ver: 0
+-- Ver: 1
 -- Created Date: 23/11/25
 ----------------------------------------------------
 
@@ -115,7 +115,6 @@ begin
 end process debouncer_motion_process;
 
 -- Output Connections
-
 -- Connect debounced state signals to the external output ports
 door_clean   <= door_int;
 window_clean <= window_int;

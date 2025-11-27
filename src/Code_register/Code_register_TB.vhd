@@ -214,9 +214,156 @@ begin
         assert S_Code_ready = '0' report "Test 4 Failed: Ready should be '0' after match" severity ERROR;
         assert S_code_match = '0' report "Test 4 Failed: Match should be '0' after 1 cycle" severity FAILURE;
 
-        --------------------------------------------------
-        -- End of Simulation
-        --------------------------------------------------
+                
+        -- PHASE 5: Test All 4 Possible 2-Bit Codes (00, 01, 10, 11)
+        report "--- Test 5: Complete 2-bit Code Coverage (00, 10, 11) ---" severity NOTE;
+
+        -- Test 5.1: Code "00" (incorrect)
+        report "T5.1: Testing Code '00'" severity NOTE;
+        S_bit_in <= '0'; 
+        S_valid  <= '1';
+        wait for WAIT_CLK;
+
+        S_bit_in <= '0';
+        S_valid  <= '1';
+        wait for WAIT_CLK;
+        S_valid <= '0';
+
+        assert S_Code_ready = '1' report "Test 5.1 Failed: Code_ready should be '1'" severity FAILURE;
+        assert S_code_match = '0' report "Test 5.1 Failed: Code_match should be '0' for '00'" severity FAILURE;
+        assert S_code_vector = "00" report "Test 5.1 Failed: Code_vector incorrect" severity FAILURE;
+
+        wait for WAIT_CLK;
+
+        -- Test 5.2: Code "10" (incorrect)
+        report "T5.2: Testing Code '10'" severity NOTE;
+        S_bit_in <= '1'; 
+        S_valid  <= '1';
+        wait for WAIT_CLK;
+
+        S_bit_in <= '0';
+        S_valid  <= '1';
+        wait for WAIT_CLK;
+        S_valid <= '0';
+
+        assert S_Code_ready = '1' report "Test 5.2 Failed: Code_ready should be '1'" severity FAILURE;
+        assert S_code_match = '0' report "Test 5.2 Failed: Code_match should be '0' for '10'" severity FAILURE;
+        assert S_code_vector = "10" report "Test 5.2 Failed: Code_vector incorrect" severity FAILURE;
+
+        wait for WAIT_CLK;
+
+        -- Test 5.3: Code "11" (incorrect, already tested but included for completeness)
+        report "T5.3: Testing Code '11'" severity NOTE;
+        S_bit_in <= '1'; 
+        S_valid  <= '1';
+        wait for WAIT_CLK;
+
+        S_bit_in <= '1';
+        S_valid  <= '1';
+        wait for WAIT_CLK;
+        S_valid <= '0';
+
+        assert S_Code_ready = '1' report "Test 5.3 Failed: Code_ready should be '1'" severity FAILURE;
+        assert S_code_match = '0' report "Test 5.3 Failed: Code_match should be '0' for '11'" severity FAILURE;
+        assert S_code_vector = "11" report "Test 5.3 Failed: Code_vector incorrect" severity FAILURE;
+
+        wait for WAIT_CLK;
+
+        -- PHASE 6: Test Valid Signal Edge Cases
+        report "--- Test 6: Valid Signal Toggling (Mid-Sequence) ---" severity NOTE;
+
+        -- Start entering a code
+        S_bit_in <= '0';
+        S_valid  <= '1';
+        wait for WAIT_CLK; -- Counter=1
+
+        -- Toggle valid OFF and back ON with same bit
+        S_valid <= '0';
+        wait for WAIT_CLK; -- No change, counter still 1
+
+        S_bit_in <= '1';
+        S_valid  <= '1';
+        wait for WAIT_CLK; -- Counter=2 (but bit_in changed to 1)
+        S_valid <= '0';
+
+        report "T6: Code after valid toggling: " & slv_to_string(S_code_vector) & 
+            ", Ready: " & STD_LOGIC'IMAGE(S_Code_ready) severity NOTE;
+
+        assert S_Code_ready = '1' report "Test 6 Failed: Code_ready should be '1'" severity FAILURE;
+        assert S_code_vector = "01" report "Test 6 Failed: Code should be '01'" severity FAILURE;
+
+        wait for WAIT_CLK;
+
+        -- PHASE 7: Test Multiple Correct Entries Back-to-Back
+        report "--- Test 7: Multiple Correct Entries ---" severity NOTE;
+
+        report "T7.1: First correct entry" severity NOTE;
+        S_bit_in <= '0'; 
+        S_valid  <= '1';
+        wait for WAIT_CLK;
+
+        S_bit_in <= '1';
+        S_valid  <= '1';
+        wait for WAIT_CLK;
+        S_valid <= '0';
+
+        assert S_code_match = '1' report "Test 7.1 Failed: Match should be '1'" severity FAILURE;
+
+        wait for WAIT_CLK;
+
+        report "T7.2: Second correct entry" severity NOTE;
+        S_bit_in <= '0'; 
+        S_valid  <= '1';
+        wait for WAIT_CLK;
+
+        S_bit_in <= '1';
+        S_valid  <= '1';
+        wait for WAIT_CLK;
+        S_valid <= '0';
+
+        assert S_code_match = '1' report "Test 7.2 Failed: Match should be '1'" severity FAILURE;
+        report "T7.2: Second correct entry accepted" severity NOTE;
+
+        wait for WAIT_CLK;
+
+        -- PHASE 8: Test Valid held HIGH for multiple cycles
+        report "--- Test 8: Valid Signal Held HIGH ---" severity NOTE;
+
+        S_bit_in <= '0';
+        S_valid  <= '1';
+        wait for WAIT_CLK; -- Counter=1
+        wait for WAIT_CLK; -- Valid still 1, counter still 1 (no increment)
+
+        S_bit_in <= '1';
+        wait for WAIT_CLK; -- Counter=2 (incremented this cycle)
+
+        S_valid <= '0';
+
+        assert S_Code_ready = '1' report "Test 8 Failed: Code_ready should be '1'" severity FAILURE;
+        assert S_code_match = '1' report "Test 8 Failed: Should match '01'" severity FAILURE;
+
+        wait for WAIT_CLK;
+
+        -- PHASE 9: Test Reset During Code Entry
+        report "--- Test 9: Reset During Code Entry ---" severity NOTE;
+
+        S_bit_in <= '1';
+        S_valid  <= '1';
+        wait for WAIT_CLK; -- Counter=1
+
+        -- Reset while in middle of entry
+        S_Rst <= '1';
+        wait for WAIT_CLK;
+        S_Rst <= '0';
+        wait for WAIT_CLK;
+
+        assert S_Code_ready = '0' report "Test 9 Failed: Code_ready should be '0' after reset" severity FAILURE;
+        assert S_code_match = '0' report "Test 9 Failed: Code_match should be '0' after reset" severity FAILURE;
+        assert S_code_vector = "00" report "Test 9 Failed: Code_vector should be '00' after reset" severity FAILURE;
+        report "T9: Reset during entry cleared all state correctly" severity NOTE;
+
+        wait for WAIT_CLK * 2;
+
         report "--- Simulation End: All tests completed ---" severity NOTE;
         wait; -- Stop the simulation
     end process P_STIM;
