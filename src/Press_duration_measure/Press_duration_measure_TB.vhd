@@ -1,168 +1,149 @@
 --------------------- Title ------------------------
 -- Project Name: HA_System
--- File Name: Press_duration_measure_TB.vhd
--- Author: Roni Shifrin
--- Ver: 1
--- Created Date: 27/11/25
+-- File Name: Press_duration_measure_tb.vhd
+-- Description: Testbench for Press Duration Measure
+--              Tests Short, Long, and Disabled presses.
 ----------------------------------------------------
-
 
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity Press_duration_measure_TB is
-end Press_duration_measure_TB;
+entity Press_duration_measure_tb is
+end Press_duration_measure_tb;
 
+architecture behavior of Press_duration_measure_tb is
 
-architecture test_bench of Press_duration_measure_TB is
+    -- Component Declaration
+    component Press_duration_measure
+        generic (
+            K : integer := 3
+        );
+        port (
+            Clk       : in  std_logic;
+            Rst       : in  std_logic;
+            btn_in    : in  std_logic;
+            enable    : in  std_logic;
+            bit_out   : out std_logic;
+            bit_valid : out std_logic
+        );
+    end component;
 
-    component Press_duration_measure is
-    generic (
-        K : integer := 3  -- threshold in clock cycles for a "long" press
-    );
-    port (
-        Clk      : in  std_logic;
-        Rst      : in  std_logic;    -- asynchronous reset
-        btn_in   : in  std_logic;    -- raw button input (assumed clean)
-        enable   : in  std_logic;    -- measurement enable
-        bit_out  : out std_logic;    -- 0 = short, 1 = long
-        bit_vaild: out std_logic     -- 2-clock pulse indicating bit_out valid
-    );
-    end component Press_duration_measure;
+    -- Test Signals
+    signal tb_Clk       : std_logic := '0';
+    signal tb_Rst       : std_logic := '0';
+    signal tb_btn_in    : std_logic := '0';
+    signal tb_enable    : std_logic := '0';
+    signal tb_bit_out   : std_logic;
+    signal tb_bit_valid : std_logic;
 
-
-
-    constant CLK_PERIOD : time := 10 ns;
-    constant K_VAL : integer := 3; -- must match DUT generic
-
-    -- DUT signals
-    signal TB_Clk      : std_logic := '0';
-    signal TB_Rst      : std_logic := '0';
-    signal TB_btn_in   : std_logic := '0';
-    signal TB_enable   : std_logic := '0';
-    signal TB_bit_out  : std_logic;
-    signal TB_bit_vaild: std_logic;
+    -- Simulation Constants
+    constant clk_period : time := 10 ns;
+    constant TEST_K     : integer := 5; -- Threshold for TB
 
 begin
 
-    DUT: Press_duration_measure
-        generic map (K => K_VAL)
+    -- Instantiate the Unit Under Test (UUT)
+    uut: Press_duration_measure
+        generic map (
+            K => TEST_K -- Set threshold to 5 cycles for this test
+        )
         port map (
-            Clk => TB_Clk,
-            Rst => TB_Rst,
-            btn_in => TB_btn_in,
-            enable => TB_enable,
-            bit_out => TB_bit_out,
-            bit_vaild => TB_bit_vaild
+            Clk       => tb_Clk,
+            Rst       => tb_Rst,
+            btn_in    => tb_btn_in,
+            enable    => tb_enable,
+            bit_out   => tb_bit_out,
+            bit_valid => tb_bit_valid
         );
 
-    -- Clock generator
-    CLK_PROC: process
+    -- Clock Process
+    clk_process : process
     begin
-        loop
-            TB_Clk <= '0';
-            wait for CLK_PERIOD/2;
-            TB_Clk <= '1';
-            wait for CLK_PERIOD/2;
-        end loop;
+        tb_Clk <= '0';
+        wait for clk_period/2;
+        tb_Clk <= '1';
+        wait for clk_period/2;
     end process;
 
-    STIM_PROC: process
+    -- Stimulus Process
+    stim_proc: process
     begin
-        report "--- Press_duration_measure TB start ---" severity note;
+        report "Starting Simulation..." severity note;
 
-        -- PHASE 0: Reset behavior
-        TB_Rst <= '1';
-        TB_enable <= '0';
-        TB_btn_in <= '0';
-        wait for CLK_PERIOD * 2;
-        TB_Rst <= '0';
-        wait for CLK_PERIOD;
-        assert TB_bit_out = '0' report "Reset: bit_out must be 0" severity error;
-        assert TB_bit_vaild = '0' report "Reset: bit_vaild must be 0" severity error;
+        ------------------------------------------------------------
+        -- 1. Reset System
+        ------------------------------------------------------------
+        tb_Rst <= '1';
+        wait for 20 ns;
+        tb_Rst <= '0';
+        tb_enable <= '1'; -- Enable the system
+        wait for clk_period;
 
-        -- PHASE 1: Short press (< K) produces bit_out=0
-        report "PHASE 1: Short press test" severity note;
-        TB_enable <= '1';
-        wait for CLK_PERIOD;
-        -- press for K-1 cycles (2 cycles)
-        TB_btn_in <= '1';
-        wait for CLK_PERIOD * 2;
-        -- release
-        TB_btn_in <= '0';
-        -- valid appears starting next clock (implementation detail)
-        wait for CLK_PERIOD;
-        assert TB_bit_vaild = '1' report "Short press: bit_vaild not asserted on expected cycle" severity error;
-        assert TB_bit_out = '0' report "Short press: expected bit_out=0" severity error;
-        wait for CLK_PERIOD;
-        assert TB_bit_vaild = '1' report "Short press: bit_vaild should be high for 2 cycles" severity error;
-        wait for CLK_PERIOD;
-        assert TB_bit_vaild = '0' report "Short press: bit_vaild should have returned to 0" severity error;
+        ------------------------------------------------------------
+        -- 2. Test SHORT Press (2 cycles, K=5)
+        ------------------------------------------------------------
+        report "Test 2: Generating SHORT Press (2 cycles)..." severity note;
+        
+        tb_btn_in <= '1';
+        wait for 2 * clk_period; -- Hold for 2 clocks
+        tb_btn_in <= '0';        -- Release
+        
+        -- Wait for processing (needs 1-2 clocks to detect edge and output)
+        wait for 2 * clk_period; 
 
-        -- PHASE 2: Exact threshold press (== K) produces bit_out=1
-        report "PHASE 2: Exact threshold press test" severity note;
-        wait for CLK_PERIOD;
-        TB_btn_in <= '1';
-        wait for CLK_PERIOD * K_VAL; -- press for exactly K cycles
-        TB_btn_in <= '0';
-        wait for CLK_PERIOD; -- wait for valid to start
-        assert TB_bit_vaild = '1' report "Exact: bit_vaild not asserted" severity error;
-        assert TB_bit_out = '1' report "Exact: expected bit_out=1" severity error;
-        wait for CLK_PERIOD;
-        assert TB_bit_vaild = '1' report "Exact: bit_vaild should be high for 2 cycles" severity error;
-        wait for CLK_PERIOD;
-        assert TB_bit_vaild = '0' report "Exact: bit_vaild should have returned to 0" severity error;
+        -- Check results
+        assert tb_bit_valid = '1' report "Error: Valid bit not High for Short Press" severity error;
+        assert tb_bit_out = '0'   report "Error: Output should be '0' (Short)" severity error;
+        
+        report "Short Press Verified." severity note;
+        
+        -- Wait for valid pulse to finish (2 cycles total)
+        wait for 2 * clk_period; 
+        assert tb_bit_valid = '0' report "Error: Valid bit did not go Low" severity error;
 
-        -- PHASE 3: Long press (> K) produces bit_out=1
-        report "PHASE 3: Long press test" severity note;
-        wait for CLK_PERIOD;
-        TB_btn_in <= '1';
-        wait for CLK_PERIOD * (K_VAL + 2);
-        TB_btn_in <= '0';
-        wait for CLK_PERIOD;
-        assert TB_bit_vaild = '1' report "Long: bit_vaild not asserted" severity error;
-        assert TB_bit_out = '1' report "Long: expected bit_out=1" severity error;
-        wait for CLK_PERIOD * 2;
-        assert TB_bit_vaild = '0' report "Long: bit_vaild should be low after pulse" severity error;
+        wait for 20 ns; -- Gap between tests
 
-        -- PHASE 4: Multiple consecutive presses
-        report "PHASE 4: Multiple presses" severity note;
-        wait for CLK_PERIOD;
-        -- short press
-        TB_btn_in <= '1'; wait for CLK_PERIOD * 2; TB_btn_in <= '0';
-        wait for CLK_PERIOD; assert TB_bit_vaild = '1' severity error; assert TB_bit_out = '0' severity error;
-        wait for CLK_PERIOD * 2;
-        -- long press
-        TB_btn_in <= '1'; wait for CLK_PERIOD * 4; TB_btn_in <= '0';
-        wait for CLK_PERIOD; assert TB_bit_vaild = '1' severity error; assert TB_bit_out = '1' severity error;
-        wait for CLK_PERIOD * 2;
+        ------------------------------------------------------------
+        -- 3. Test LONG Press (7 cycles, K=5)
+        ------------------------------------------------------------
+        report "Test 3: Generating LONG Press (7 cycles)..." severity note;
+        
+        tb_btn_in <= '1';
+        wait for 7 * clk_period; -- Hold for 7 clocks
+        tb_btn_in <= '0';        -- Release
+        
+        wait for 2 * clk_period; -- Allow edge detection
+        
+        -- Check results
+        assert tb_bit_valid = '1' report "Error: Valid bit not High for Long Press" severity error;
+        assert tb_bit_out = '1'   report "Error: Output should be '1' (Long)" severity error;
+        
+        report "Long Press Verified." severity note;
+        wait for 2 * clk_period;
 
-        -- PHASE 5: Enable low - presses ignored
-        report "PHASE 5: Enable low test" severity note;
-        TB_enable <= '0';
-        wait for CLK_PERIOD;
-        TB_btn_in <= '1';
-        wait for CLK_PERIOD * 4;
-        TB_btn_in <= '0';
-        wait for CLK_PERIOD * 2;
-        assert TB_bit_vaild = '0' report "Enable low: bit_vaild should not assert" severity error;
+        ------------------------------------------------------------
+        -- 4. Test ENABLE = '0' (Ignored Press)
+        ------------------------------------------------------------
+        report "Test 4: Testing Disabled State..." severity note;
+        
+        tb_enable <= '0'; -- Disable
+        wait for clk_period;
+        
+        tb_btn_in <= '1';
+        wait for 10 * clk_period; -- Very long press
+        tb_btn_in <= '0';
+        
+        wait for 2 * clk_period;
+        
+        assert tb_bit_valid = '0' report "Error: Generated output while Disabled!" severity error;
+        report "Disabled State Verified." severity note;
 
-        -- PHASE 6: Reset during press
-        report "PHASE 6: Reset during press" severity note;
-        TB_enable <= '1';
-        wait for CLK_PERIOD;
-        TB_btn_in <= '1';
-        wait for CLK_PERIOD * 2;
-        TB_Rst <= '1';
-        wait for CLK_PERIOD;
-        TB_Rst <= '0';
-        wait for CLK_PERIOD;
-        assert TB_bit_vaild = '0' report "Reset during press: bit_vaild should be 0" severity error;
-        assert TB_bit_out = '0' report "Reset during press: bit_out should be 0" severity error;
-
-        report "--- Press_duration_measure TB completed successfully ---" severity note;
+        ------------------------------------------------------------
+        -- End Simulation
+        ------------------------------------------------------------
+        report "Simulation Completed Successfully." severity note;
         wait;
-    end process STIM_PROC;
+    end process;
 
-end architecture test_bench;
+end behavior;

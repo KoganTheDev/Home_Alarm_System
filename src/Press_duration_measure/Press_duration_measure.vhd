@@ -2,10 +2,9 @@
 -- Project Name: HA_System
 -- File Name: Press_duration_measure.vhd
 -- Author: Roni Shifrin
--- Ver: 1
+-- Ver: 1.1 (Fixed)
 -- Created Date: 23/11/25
 ----------------------------------------------------
-
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -16,21 +15,21 @@ entity Press_duration_measure is
         K : integer := 3  -- threshold in clock cycles for a "long" press
     );
     port (
-        Clk      : in  std_logic;
-        Rst      : in  std_logic;    -- asynchronous reset
-        btn_in   : in  std_logic;    -- raw button input (assumed clean)
-        enable   : in  std_logic;    -- measurement enable
-        bit_out  : out std_logic;    -- 0 = short, 1 = long
-        bit_vaild: out std_logic     -- 2-clock pulse indicating bit_out valid
+        Clk       : in  std_logic;
+        Rst       : in  std_logic;    -- asynchronous reset
+        btn_in    : in  std_logic;    -- raw button input (assumed clean)
+        enable    : in  std_logic;    -- measurement enable
+        bit_out   : out std_logic;    -- 0 = short, 1 = long
+        bit_valid : out std_logic     -- 2-clock pulse indicating bit_out valid
     );
 end Press_duration_measure;
 
 architecture behavior of Press_duration_measure is
-    signal btn_prev      : std_logic := '0';
-    signal count         : integer := 0;
-    signal pressing      : std_logic := '0';
-    signal last_bit      : std_logic := '0';
-    signal valid_count   : integer := 0; -- counts remaining cycles of bit_vaild
+    signal btn_prev    : std_logic := '0';
+    signal count       : natural := 0;      -- Used 'natural' prevents negative numbers
+    signal pressing    : std_logic := '0';
+    signal last_bit    : std_logic := '0';
+    signal valid_count : natural range 0 to 2 := 0; 
 begin
 
     process(Clk, Rst)
@@ -42,48 +41,52 @@ begin
             last_bit    <= '0';
             valid_count <= 0;
             bit_out     <= '0';
-            bit_vaild   <= '0';
+            bit_valid   <= '0';
 
         elsif rising_edge(Clk) then
-            -- default: capture previous button value
+            -- 1. Default: capture previous button value for edge detection
             btn_prev <= btn_in;
 
-            -- Manage valid pulse timing
+            -- 2. Handle Output Pulse (Default behavior)
             if valid_count > 0 then
-                bit_vaild <= '1';
+                bit_valid   <= '1';
+                bit_out     <= last_bit;   -- output the calculated length
                 valid_count <= valid_count - 1;
-                -- keep bit_out stable while valid
-                bit_out <= last_bit;
             else
-                bit_vaild <= '0';
-                bit_out <= '0';
+                bit_valid <= '0';
+                bit_out   <= '0';
             end if;
 
+            -- 3. Handle Input Logic (Overrides Valid Count if a new release occurs)
             if enable = '1' then
-                -- Start counting on rising edge of button
+                
+                -- Detect Rising Edge (Start Press)
                 if btn_prev = '0' and btn_in = '1' then
                     pressing <= '1';
-                    count <= 1;
+                    count    <= 1;
 
-                -- Continue counting while pressed
+                -- Continue Counting (Holding)
                 elsif pressing = '1' and btn_in = '1' then
                     count <= count + 1;
 
-                -- On release, evaluate length and generate bit + valid
+                -- Detect Falling Edge (Release)
                 elsif pressing = '1' and btn_prev = '1' and btn_in = '0' then
+                    -- Determine Short vs Long
                     if count >= K then
                         last_bit <= '1';
                     else
                         last_bit <= '0';
                     end if;
-                    valid_count <= 2; -- produce 2-clock pulse
-                    pressing <= '0';
-                    count <= 0;
+                    
+                    valid_count <= 2; -- Trigger the 2-clock pulse (overrides the decrement above)
+                    pressing    <= '0';
+                    count       <= 0;
                 end if;
+            
             else
-                -- If not enabled, clear any ongoing measurement
+                -- If disabled, clear internal state
                 pressing <= '0';
-                count <= 0;
+                count    <= 0;
             end if;
         end if;
     end process;
