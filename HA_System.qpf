@@ -19,13 +19,13 @@
 #
 # Quartus Prime
 # Version 20.1.1 Build 720 11/11/2020 SJ Lite Edition
-# Date created = 09:47:35  November 20, 2025
+# Date created = 14:01:46  November 24, 2025
 #
 # -------------------------------------------------------------------------- #
 
 QUARTUS_VERSION = "20.1"
-DATE = "09:47:35  November 20, 2025"
+DATE = "14:01:46  November 24, 2025"
 
 # Revisions
 
-PROJECT_REVISION = "Home_Alarm_System"
+PROJECT_REVISION = "HA_System"

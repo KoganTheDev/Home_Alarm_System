@@ -1,1 +1,13 @@
 *.pdf
+
+# Don`t upload output files\simulation\or 
+db
+incremental_db
+output_files
+simulation
+c5_pin_model_dump.txt
+HA_System_nativelink_simulation.rpt
+
+
+# Dont upload .bak files
+*.bak

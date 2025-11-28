@@ -2,7 +2,7 @@
 -- Project Name: HA_System
 -- File Name: Display_data.vhd
 -- Author: Roni Shifrin
--- Ver: 0
+-- Ver: 1 
 -- Created Date: 23/11/25
 ----------------------------------------------------
 
@@ -12,7 +12,7 @@ use ieee.numeric_std.all;
 
 entity Display_data is
     generic (
-        N_bit : integer := 2           -- Number of state bits (2 ? 3 states: 0..2)
+        N_bit : integer := 2           
     ); 
 
     port (
@@ -30,38 +30,38 @@ begin
     process(clk, Rst)
     begin
         if Rst = '1' then
-            data <= (others => '0');
+            data <= (others => 'Z');
 
-        elsif rising_edge(clk) then
+        elsif RISING_EDGE(clk) then
 
             case state_code is
 
-                -- System OFF ? display '0'
+                -- System OFF => display '0' (ASCII 0x30)
                 when "000" =>
                     data <= x"30";  -- ASCII '0'
                     report "Display: OFF -> '0'" severity note;
 
-                -- System ARMED ? display '8'
-                when "001" =>
+                -- System ARMED => display '8' (ASCII 0x38)
+                when "001" => 
                     data <= x"38";  -- ASCII '8'
                     report "Display: ARMED -> '8'" severity note;
 
-                -- ALERT / INTRUSION ? display 'A'
+                -- ALERT / INTRUSION => display 'A' (ASCII 0x41)
                 when "010" =>
                     data <= x"41";  -- ASCII 'A'
                     report "Display: ALERT -> 'A'" severity note;
 
-                -- CORRECT CODE ? display 'F'
+                -- CORRECT CODE => display 'F' (ASCII 0x46)
                 when "011" =>
                     data <= x"46";  -- ASCII 'F'
                     report "Display: CORRECT CODE -> 'F'" severity note;
 
-                -- ATTEMPTS MODE ? display '1'..'7'
+                -- ATTEMPTS MODE => display '1'..'7' (ASCII 0x31..0x37)
                 when "100" =>
                     data <= std_logic_vector(to_unsigned(attempts + 48, 8));  -- '0' + attempts
                     report "Display: ATTEMPTS -> " & integer'image(attempts) severity note;
 
-                -- Default / unknown state ? display '-'
+                -- Default / unknown state => display '-' (ASCII 0x2D)
                 when others =>
                     data <= x"2D";  -- ASCII '-'
                     report "Display: UNKNOWN STATE -> '-'" severity warning;
