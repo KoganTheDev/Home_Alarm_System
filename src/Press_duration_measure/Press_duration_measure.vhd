@@ -2,7 +2,7 @@
 -- Project Name: HA_System
 -- File Name: Press_duration_measure.vhd
 -- Author: Roni Shifrin
--- Ver: 1.1 (Fixed)
+-- Ver: 1
 -- Created Date: 23/11/25
 ----------------------------------------------------
 

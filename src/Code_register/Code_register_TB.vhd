@@ -2,7 +2,7 @@
 -- Project Name: HA_System
 -- File Name: Code_register_TB.vhd
 -- Author: Yuval Kogan
--- Ver: 0
+-- Ver: 1
 -- Created Date: 23/11/25
 ----------------------------------------------------
 
@@ -160,7 +160,6 @@ begin
         wait for WAIT_CLK; -- State: Counter=2, Vector=11. Output ready='1', match='0'.
         S_valid <= '0';
         
-        -- *** CHECK FINAL STATE ***
         report "T2: Code '11' entered. Code vector: " & slv_to_string(S_code_vector) & 
                ", Ready: " & STD_LOGIC'IMAGE(S_Code_ready) & ", Match: " & STD_LOGIC'IMAGE(S_code_match) severity NOTE;
 

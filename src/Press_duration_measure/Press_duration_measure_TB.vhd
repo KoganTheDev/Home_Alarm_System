@@ -1,8 +1,9 @@
 --------------------- Title ------------------------
 -- Project Name: HA_System
--- File Name: Press_duration_measure_tb.vhd
--- Description: Testbench for Press Duration Measure
---              Tests Short, Long, and Disabled presses.
+-- File Name: Press_duration_measure_TB.vhd
+-- Author: Roni Shifrin
+-- Ver: 1
+-- Created Date: 23/11/25
 ----------------------------------------------------
 
 library ieee;
@@ -71,19 +72,16 @@ begin
     begin
         report "Starting Simulation..." severity note;
 
-        ------------------------------------------------------------
+        
         -- 1. Reset System
-        ------------------------------------------------------------
         tb_Rst <= '1';
         wait for 20 ns;
         tb_Rst <= '0';
         tb_enable <= '1'; -- Enable the system
         wait for clk_period;
 
-        ------------------------------------------------------------
         -- 2. Test SHORT Press (2 cycles, K=5)
-        ------------------------------------------------------------
-        report "Test 2: Generating SHORT Press (2 cycles)..." severity note;
+        report "Test 1: Generating SHORT Press (2 cycles)..." severity note;
         
         tb_btn_in <= '1';
         wait for 2 * clk_period; -- Hold for 2 clocks
@@ -104,10 +102,9 @@ begin
 
         wait for 20 ns; -- Gap between tests
 
-        ------------------------------------------------------------
+        
         -- 3. Test LONG Press (7 cycles, K=5)
-        ------------------------------------------------------------
-        report "Test 3: Generating LONG Press (7 cycles)..." severity note;
+        report "Test 2: Generating LONG Press (7 cycles)..." severity note;
         
         tb_btn_in <= '1';
         wait for 7 * clk_period; -- Hold for 7 clocks
@@ -122,10 +119,8 @@ begin
         report "Long Press Verified." severity note;
         wait for 2 * clk_period;
 
-        ------------------------------------------------------------
         -- 4. Test ENABLE = '0' (Ignored Press)
-        ------------------------------------------------------------
-        report "Test 4: Testing Disabled State..." severity note;
+        report "Test 3: Testing Disabled State..." severity note;
         
         tb_enable <= '0'; -- Disable
         wait for clk_period;
@@ -138,10 +133,8 @@ begin
         
         assert tb_bit_valid = '0' report "Error: Generated output while Disabled!" severity error;
         report "Disabled State Verified." severity note;
-
-        ------------------------------------------------------------
+ 
         -- End Simulation
-        ------------------------------------------------------------
         report "Simulation Completed Successfully." severity note;
         wait;
     end process;

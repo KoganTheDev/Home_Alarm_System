@@ -17,7 +17,7 @@ end Sensors_logic_TB;
 
 architecture test_bench of Sensors_logic_TB is
 
-    -- DUT Component Declaration (Ensure it matches Sensors_logic.vhd)
+    -- DUT Component Declaration
     component Sensors_logic
         port (
             Clk          : IN  std_logic;
@@ -83,7 +83,7 @@ begin
     STIM_GEN: process
     begin
         
-        report "--- Starting Comprehensive Sensor Debounce Test Suite ---" severity note;
+        report "--- Starting Sensor_logic Test Suite ---" severity note;
         report "--- Debounce requires 3 Clock Cycles (threshold=2) ---" severity note;
 
         -- Initial conditions
@@ -245,7 +245,7 @@ begin
 
 
         -- PHASE 9: COMPLETE SYSTEM SHUTDOWN
-        report "PHASE 10: Complete Shutdown Test" severity note;
+        report "PHASE 9: Complete Shutdown Test" severity note;
 
         -- All sensors OFF (000)
         TB_door_sens   <= '0';
@@ -257,11 +257,11 @@ begin
         assert TB_window_clean = '0' report "Error: Window failed to debounce OFF" severity error;
         assert TB_motion_clean = '0' report "Error: Motion failed to debounce OFF" severity error;
         assert TB_detected     = '0' report "Error: Detected remained high at shutdown" severity failure;
-        report "PHASE 10: All sensors deactivated, detected correctly de-asserted" severity note;
+        report "PHASE 9: All sensors deactivated, detected correctly de-asserted" severity note;
 
 
         -- PHASE 10: RESET DURING DETECTION
-        report "PHASE 11: Testing Reset While Detection Active" severity note;
+        report "PHASE 10: Testing Reset While Detection Active" severity note;
         
         -- Activate two sensors again
         TB_door_sens   <= '1';
@@ -281,12 +281,12 @@ begin
         assert TB_window_clean = '0' report "Error: Reset failed to clear window_clean" severity error;
         assert TB_motion_clean = '0' report "Error: Reset failed to clear motion_clean" severity error;
         assert TB_detected     = '0' report "Error: Reset failed to clear detected" severity error;
-        report "PHASE 11: Reset during detection clears all signals correctly" severity note;
+        report "PHASE 10: Reset during detection clears all signals correctly" severity note;
 
         
         -- End Simulation
         wait for CLK_PERIOD * 5;
-        report "--- Simulation Complete: ALL comprehensive test cases PASSED ---" severity note;
+        report "--- Simulation Complete: ALL test cases PASSED ---" severity note;
         wait; 
     end process STIM_GEN;
 

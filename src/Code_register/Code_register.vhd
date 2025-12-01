@@ -2,7 +2,7 @@
 -- Project Name: HA_System
 -- File Name: Code_register.vhd
 -- Author: Yuval Kogan
--- Ver: 0
+-- Ver: 1
 -- Created Date: 23/11/25
 ----------------------------------------------------
 
