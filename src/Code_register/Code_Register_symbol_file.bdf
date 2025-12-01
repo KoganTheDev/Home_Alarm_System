@@ -21,14 +21,14 @@ https://fpgasoftware.intel.com/eula.
 */
 (header "graphic" (version "1.4"))
 (symbol
-	(rect 464 184 680 296)
-	(text "Display_data" (rect 5 0 69 12)(font "Arial" ))
+	(rect 496 192 696 304)
+	(text "Code_register" (rect 5 0 73 12)(font "Arial" ))
 	(text "inst" (rect 8 96 25 108)(font "Arial" ))
 	(port
 		(pt 0 32)
 		(input)
-		(text "clk" (rect 0 0 14 12)(font "Arial" ))
-		(text "clk" (rect 21 27 35 39)(font "Arial" ))
+		(text "Clk" (rect 0 0 16 12)(font "Arial" ))
+		(text "Clk" (rect 21 27 37 39)(font "Arial" ))
 		(line (pt 0 32)(pt 16 32))
 	)
 	(port
@@ -41,31 +41,50 @@ https://fpgasoftware.intel.com/eula.
 	(port
 		(pt 0 64)
 		(input)
-		(text "state_code[n_bit..0]" (rect 0 0 97 12)(font "Arial" ))
-		(text "state_code[n_bit..0]" (rect 21 59 118 71)(font "Arial" ))
-		(line (pt 0 64)(pt 16 64)(line_width 3))
+		(text "bit_in" (rect 0 0 25 12)(font "Arial" ))
+		(text "bit_in" (rect 21 59 46 71)(font "Arial" ))
+		(line (pt 0 64)(pt 16 64))
 	)
 	(port
 		(pt 0 80)
 		(input)
-		(text "attempts[2..0]" (rect 0 0 69 12)(font "Arial" ))
-		(text "attempts[2..0]" (rect 21 75 90 87)(font "Arial" ))
-		(line (pt 0 80)(pt 16 80)(line_width 3))
+		(text "valid" (rect 0 0 23 12)(font "Arial" ))
+		(text "valid" (rect 21 75 44 87)(font "Arial" ))
+		(line (pt 0 80)(pt 16 80))
 	)
 	(port
-		(pt 216 32)
+		(pt 200 32)
 		(output)
-		(text "data[7..0]" (rect 0 0 47 12)(font "Arial" ))
-		(text "data[7..0]" (rect 156 27 203 39)(font "Arial" ))
-		(line (pt 216 32)(pt 200 32)(line_width 3))
+		(text "Code_ready" (rect 0 0 60 12)(font "Arial" ))
+		(text "Code_ready" (rect 129 27 189 39)(font "Arial" ))
+		(line (pt 200 32)(pt 184 32))
+	)
+	(port
+		(pt 200 48)
+		(output)
+		(text "code_match" (rect 0 0 60 12)(font "Arial" ))
+		(text "code_match" (rect 129 43 189 55)(font "Arial" ))
+		(line (pt 200 48)(pt 184 48))
+	)
+	(port
+		(pt 200 64)
+		(output)
+		(text "code_vector[n-1..0]" (rect 0 0 96 12)(font "Arial" ))
+		(text "code_vector[n-1..0]" (rect 98 59 194 71)(font "Arial" ))
+		(line (pt 200 64)(pt 184 64)(line_width 3))
 	)
 	(parameter
-		"N_bit"
+		"N"
 		"2"
 		""
 		(type "PARAMETER_SIGNED_DEC")	)
+	(parameter
+		"PASSWORD"
+		"01"
+		""
+		(type "PARAMETER_UNSIGNED_BIN")	)
 	(drawing
-		(rectangle (rect 16 16 200 96))
+		(rectangle (rect 16 16 184 96))
 	)
-	(annotation_block (parameter)(rect 680 144 856 184))
+	(annotation_block (parameter)(rect 696 128 888 192))
 )

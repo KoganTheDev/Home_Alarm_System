@@ -39,7 +39,7 @@
 
 set_global_assignment -name FAMILY "Cyclone V"
 set_global_assignment -name DEVICE 5CGXFC7C7F23C8
-set_global_assignment -name TOP_LEVEL_ENTITY Code_register
+set_global_assignment -name TOP_LEVEL_ENTITY Display_data
 set_global_assignment -name ORIGINAL_QUARTUS_VERSION 20.1.1
 set_global_assignment -name PROJECT_CREATION_TIME_DATE "14:01:46  NOVEMBER 24, 2025"
 set_global_assignment -name LAST_QUARTUS_VERSION "20.1.1 Lite Edition"
@@ -59,17 +59,17 @@ set_global_assignment -name VHDL_FILE src/Code_register/Code_register.vhd
 set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
 set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
 set_global_assignment -name EDA_TEST_BENCH_ENABLE_STATUS TEST_BENCH_MODE -section_id eda_simulation
-set_global_assignment -name EDA_NATIVELINK_SIMULATION_TEST_BENCH Code_register_TB -section_id eda_simulation
+set_global_assignment -name EDA_NATIVELINK_SIMULATION_TEST_BENCH Display_data_TB -section_id eda_simulation
 set_global_assignment -name VHDL_FILE src/Sensors_logic/Sensors_logic_TB.vhd
 set_global_assignment -name VHDL_FILE src/Sensors_logic/Sensors_logic.vhd
 set_global_assignment -name VHDL_FILE src/Display_data/Display_data.vhd
 set_global_assignment -name VHDL_FILE src/Press_duration_measure/Press_duration_measure.vhd
-set_global_assignment -name EDA_TEST_BENCH_NAME Code_register_TB -section_id eda_simulation
-set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id Code_register_TB
-set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME Code_register_TB -section_id Code_register_TB
 set_global_assignment -name BDF_FILE src/Sensors_logic/Sensor_logic_symbol_file.bdf
 set_global_assignment -name BDF_FILE src/Display_data/Display_data_symbol_file.bdf
-set_global_assignment -name EDA_TEST_BENCH_FILE src/Code_register/Code_register_TB.vhd -section_id Code_register_TB
+set_global_assignment -name EDA_TEST_BENCH_NAME Display_data_TB -section_id eda_simulation
+set_global_assignment -name EDA_DESIGN_INSTANCE_NAME NA -section_id Display_data_TB
+set_global_assignment -name EDA_TEST_BENCH_MODULE_NAME Display_data_TB -section_id Display_data_TB
+set_global_assignment -name EDA_TEST_BENCH_FILE src/Display_data/Display_data_TB.vhd -section_id Display_data_TB
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
