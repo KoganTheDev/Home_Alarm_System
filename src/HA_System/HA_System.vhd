@@ -76,7 +76,7 @@ architecture behavior of HA_System is
             alarm_siren        : out std_logic;
             system_armed       : out std_logic;
             state_code         : out std_logic_vector(2 downto 0);
-            attempts           : out integer range 0 to 3; 
+            attempts           : out integer range 0 to 7; 
             intrusion_detected : in  std_logic
         );
     end component;
