@@ -6,7 +6,6 @@
 -- Created Date: 4/12/25
 ----------------------------------------------------
 
-
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
@@ -23,10 +22,8 @@ entity HA_System is
 
         alarm_siren  : out std_logic;
         system_armed : out std_logic;
-        sens_dbg   : out std_logic_vector(2 downto 0);
-        attempts     : out integer range 0 to 7;
-        display_data : out std_logic_vector(7 downto 0)
-
+        sens_dbg     : out std_logic_vector(2 downto 0);
+        display_data : out std_logic_vector(8 downto 0) 
     );
 end HA_System;
 
@@ -70,26 +67,27 @@ architecture behavior of HA_System is
 
     component Alarm_controller_FSM
         port (
-            Clk               : in  std_logic;
-            Rst               : in  std_logic;
-            code_ready        : in  std_logic;
-            code_match        : in  std_logic;
-            enable_press      : out std_logic;
-            clear_code        : out std_logic;
-            alarm_siren       : out std_logic;
-            system_armed      : out std_logic;
-            state_code        : out std_logic_vector(2 downto 0);
-            attempts          : out integer range 0 to 7;
-            intrusion_detected: in  std_logic
+            Clk                : in  std_logic;
+            Rst                : in  std_logic;
+            code_ready         : in  std_logic;
+            code_match         : in  std_logic;
+            enable_press       : out std_logic;
+            clear_code         : out std_logic;
+            alarm_siren        : out std_logic;
+            system_armed       : out std_logic;
+            state_code         : out std_logic_vector(2 downto 0);
+            attempts           : out integer range 0 to 3; 
+            intrusion_detected : in  std_logic
         );
     end component;
-    component Display_data
+
+    component Display_data_module 
             port (
         clk        : in  std_logic;
         Rst        : in  std_logic;
         state_code : in  std_logic_vector(2 downto 0);
-        attempts   : in  integer range 0 to 7;
-        data       : out std_logic_vector(7 downto 0)  -- ASCII output
+        attempts   : in  integer range 0 to 3; 
+        data       : out std_logic_vector(8 downto 0)  
     );
     end component;
 
@@ -103,9 +101,13 @@ signal s_code_match         : std_logic;
 signal s_intrusion_detected : std_logic;
 signal s_enable_press       : std_logic;
 signal s_clear_code         : std_logic;
-signal s_attempts           : integer range 0 to 7;
+signal s_attempts           : integer range 0 to 3; 
 signal s_state_code         : std_logic_vector(2 downto 0);
-signal s_data                 : std_logic_vector(7 downto 0);
+signal s_data               : std_logic_vector(8 downto 0); 
+
+signal door_clean           : std_logic;
+signal window_clean         : std_logic;
+signal motion_clean         : std_logic;
 
 begin
 
@@ -124,18 +126,18 @@ begin
     U1 : Code_register
         port map (
             Clk        => Clk,
-            Rst        => Rst,
+            Rst        => s_clear_code, 
             bit_in     => s_bit_out,
             valid      => s_bit_valid,
             Code_ready => s_code_ready,
             code_match => s_code_match
         );
--- ???? ????? ????? ??????
+        
     -- Sensors logic
     U2 : Sensors_logic
         port map (
             Clk          => Clk,
-            Rst          => Rst,
+            Rst          => s_clear_code,
             door_sens    => door_raw,
             window_sens  => window_raw,
             motion_sens  => motion_raw,
@@ -148,21 +150,21 @@ begin
     -- Alarm controller FSM
     U3 : Alarm_controller_FSM
         port map (
-            Clk               => Clk,
-            Rst               => Rst,
-            code_ready        => s_code_ready,
-            code_match        => s_code_match,
-            enable_press      => s_enable_press,
-            clear_code        => s_clear_code,
-            alarm_siren       => alarm_siren,
-            system_armed      => system_armed,
-            state_code        => s_state_code,
-            attempts          => s_attempts,
-            intrusion_detected=> s_intrusion_detected
+            Clk                => Clk,
+            Rst                => Rst,
+            code_ready         => s_code_ready,
+            code_match         => s_code_match,
+            enable_press       => s_enable_press,
+            clear_code         => s_clear_code,
+            alarm_siren        => alarm_siren,
+            system_armed       => system_armed,
+            state_code         => s_state_code,
+            attempts           => s_attempts,
+            intrusion_detected => s_intrusion_detected
         );
--
+
     -- Display module
-    U4 : Display_data
+    U4 : Display_data_module
         port map (
             clk        => Clk,
             Rst        => Rst,
@@ -170,9 +172,10 @@ begin
             attempts   => s_attempts,
             data       => s_data
         );
---???? ????? ?? ?? ???????
+
     -- Outputs to top-level ports
-    state_code <= s_state_code;
-    attempts   <= s_attempts;
+    sens_dbg     <= motion_clean & window_clean & door_clean;
+    display_data <= s_data;
+    
 
 end architecture behavior;
