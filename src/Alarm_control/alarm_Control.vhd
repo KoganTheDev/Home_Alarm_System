@@ -51,9 +51,44 @@ begin
             clear_code    <= '0';
             
         elsif rising_edge(Clk) then
+            case current_state is
+                when DISARMED =>
+                    if code_ready = '1' then
+                        if code_match = '1' then
+                            current_state <= ARMED;
+                            s_attempts <= 0;
+                        else
+                            s_attempts <= s_attempts + 1;
+                        end if;
+                    end if;
+                    
+                when ARMED =>
+                    if intrusion_detected = '1' then
+                        current_state <= ALARM;
+                    elsif code_ready = '1' and code_match = '1' then
+                        current_state <= DISARMED;
+                        s_attempts <= 0;
+                    end if;
+                    
+                when ALARM =>
+                    if code_ready = '1' and code_match = '1' then
+                        current_state <= DISARMED;
+                        s_attempts <= 0;
+                    end if;
+                    
+            end case;
+        end if;
+    end process;
 
-
-
-
+    -- Output assignments based on current state
+    enable_press <= '1' when current_state = DISARMED else '0';
+    alarm_siren <= '1' when current_state = ALARM else '0';
+    system_armed <= '1' when current_state = ARMED else '0';
+    clear_code <= '1' when code_ready = '1' else '0';
+    attempts <= s_attempts;
+    
+    state_code <= ASCII_0 when current_state = DISARMED else
+                  ASCII_8 when current_state = ARMED else
+                  ASCII_A;
 
 end architecture behavior;
