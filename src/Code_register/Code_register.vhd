@@ -54,10 +54,10 @@ begin
         -- ASYNCHRONOUS RESET
         if (Rst = '1') then
             -- Reset all internal state elements
-            match_int     <= '0';
+            match_int     <= 'Z';
             code_reg_int  <= (others => '0');
             bit_count_int <= 0;
-            ready_int     <= '0';
+            ready_int     <= 'Z';
 
         -- SYNCHRONOUS LOGIC
         elsif RISING_EDGE(Clk) then

@@ -50,7 +50,7 @@ debouncer_door_process : process(Clk, Rst)
 begin
     -- Asynchronous Reset
     if Rst = '1' then
-        door_int <= '0';
+        door_int <= 'Z';
         count_door <= (others => '0');
         
     -- Synchronous Clock Edge
@@ -77,7 +77,7 @@ end process debouncer_door_process;
 debouncer_window_process : process(Clk, Rst)
 begin
     if Rst = '1' then
-        window_int <= '0';
+        window_int <= 'Z';
         count_window <= (others => '0');
     elsif RISING_EDGE(Clk) then
         if window_sens = window_int then
@@ -98,7 +98,7 @@ end process debouncer_window_process;
 debouncer_motion_process : process(Clk, Rst)
 begin
     if Rst = '1' then
-        motion_int <= '0';
+        motion_int <= 'Z';
         count_motion <= (others => '0');
     elsif RISING_EDGE(Clk) then
         if motion_sens = motion_int then

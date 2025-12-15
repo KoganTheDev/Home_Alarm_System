@@ -35,13 +35,13 @@ begin
     process(Clk, Rst)
     begin
         if Rst = '1' then
-            btn_prev    <= '0';
+            btn_prev    <= 'Z';
             count       <= 0;
-            pressing    <= '0';
-            last_bit    <= '0';
+            pressing    <= 'Z';
+            last_bit    <= 'Z';
             valid_count <= 0;
-            bit_out     <= '0';
-            bit_valid   <= '0';
+            bit_out     <= 'Z';
+            bit_valid   <= 'Z';
 
         elsif rising_edge(Clk) then
             -- 1. Default: capture previous button value for edge detection

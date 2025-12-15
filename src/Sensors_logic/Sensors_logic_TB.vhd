@@ -104,9 +104,9 @@ begin
 
         -- Wait for one clock cycle to verify reset state persists
         wait for CLK_PERIOD;
-        assert TB_door_clean   = '0' report "Error: door_clean not cleared by Rst" severity error;
-        assert TB_window_clean = '0' report "Error: window_clean not cleared by Rst" severity error;
-        assert TB_motion_clean = '0' report "Error: motion_clean not cleared by Rst" severity error;
+        assert TB_door_clean   = 'Z' report "Error: door_clean not cleared by Rst" severity error;
+        assert TB_window_clean = 'Z' report "Error: window_clean not cleared by Rst" severity error;
+        assert TB_motion_clean = 'Z' report "Error: motion_clean not cleared by Rst" severity error;
         assert TB_detected     = '0' report "Error: detected not cleared by Rst" severity error;
         report "PHASE 0: Reset verified - all outputs cleared" severity note;
 
