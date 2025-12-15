@@ -29,7 +29,7 @@ end entity alarm_Control;
 architecture behavior of alarm_Control is
 
     -- FSM State Definitions
-    type state_type is (ST_OFF, ST_ARMED, ST_ALERT, ST_ATTEMPTS, ST_CORRECT);
+    type state_type is (ST_OFF, ST_ARMED, ST_ALERT, ST_ATTEMPTS, ST_CORRECT, ST_LOCK);
     signal current_state : state_type := ST_OFF;
 
     -- Internal signals
@@ -38,6 +38,7 @@ architecture behavior of alarm_Control is
     signal alarm_siren_flag : STD_LOGIC := '0';
     signal system_armed_flag : STD_LOGIC := '0';
     signal s_attempts : integer range 0 to 7 := 0;
+    signal s_lock_cntr : integer range 0 to 5 := 0; -- Used to lock system for 5 Clk cycles
 
 
     -- ASCII Constants (Hex values)
@@ -51,12 +52,13 @@ begin
     alarm_Control_process : process(Clk, Rst)
     begin
         -- Asynchronous Reset 
-        if Rst = '1' then -- Note: siren_flag is unchanged
+        if Rst = '1' then -- Note: Rst does'nt change alarm state
             s_enable_press <= '0';
-            s_clear_code   <= '1';
+            s_clear_code <= '1';
             system_armed_flag <= '0';
-            current_state <= ST_OFF;
-            s_attempts    <= 0;
+            current_state <= ST_ARMED; -- Next state is to ARMED - arm the system
+            s_attempts <= 0;
+            s_lock_cntr <= 0;
 
         --  Synchronous Logic
         elsif rising_edge(Clk) then
@@ -68,46 +70,40 @@ begin
                     s_clear_code <= '0';
                     system_armed_flag <= '0';
                     s_attempts <= 0;
-                    
-                    if (alarm_siren_flag = '1') then -- Coming from async reset when the alarm is on, continue to ST_ALERT
-                        current_state <= ST_ALERT;
-                    else -- Continue to ARMED state
-                        current_state <= ST_ARMED;
-                        alarm_siren_flag <= '0';  -- Make sure siren is off so the system can be armed
-                    end if;
-                    
+                    s_lock_cntr <= 0;
+
                 when ST_ARMED =>
                     system_armed_flag <= '1'; -- Arm system
+                    s_lock_cntr <= 0;
 
-                    if (intrusion_detected = '1') then
-                        -- Change to ST_ALERT
-                        current_state <= ST_ALERT;
-                    else -- Move automatically to the Code Logic block
+                    if (alarm_siren_flag = '1') then -- Siren is on from beforehand, move directly to the code part
                         current_state <= ST_ATTEMPTS;
+                    elsif (intrusion_detected = '1') then
+                        current_state <= ST_ALERT; -- Change to ST_ALERT
                     end if;
 
                 when ST_ALERT =>
-                    system_armed_flag <= '0'; -- Siren released -> system is not armed anymore
+                    system_armed_flag <= '0'; -- Siren fires -> system is not armed anymore
                     alarm_siren_flag <= '1'; -- Siren on
                     
                     current_state <= ST_ATTEMPTS; -- Move automatically to the Code check logic block
 
                 when ST_ATTEMPTS =>
                     if (code_ready = '0') then
-                        -- Code Entry logic
+                        -- Code Entry logic, allow the password to be entered
                         s_enable_press <= '1';
                         s_clear_code <= '0';
-                    else -- Code Check logic
-                        s_enable_press <= '0';
-                        s_clear_code <= '1'; -- Clear code for next iteration
 
-                        if (code_match = '1') then -- Correct code, move to state ST_CORRECT
-                            current_state <= ST_CORRECT;
-                        elsif (s_attempts < 7) then -- There are more possible attempts, try again
-                            s_attempts <= s_attempts + 1; -- Increase attempts counter
-                            current_state <= ST_ATTEMPTS; -- State stays the same
-                        else -- Used all attempts, next state is intrusion detected
-                            current_state <= ST_ALERT;
+                    else -- code_ready == 1
+                        s_enable_press <= '0';
+                        s_clear_code <= '1'; -- Clear code for next attempt if any
+
+                        if (s_attempts = 7) then -- attempt limit, move to ST_LOCK
+                                current_state <= ST_LOCK;
+                        elsif (code_match = '1') then -- Correct code, re-ARM the system
+                                current_state <= ST_CORRECT;
+                        else
+                            s_attempts <= s_attempts + 1; -- attmepts += 1
                         end if;
                     end if;
 
@@ -115,12 +111,26 @@ begin
                     -- Code Correct logic
                     s_enable_press <= '0'; -- Don't allow pressing
                     s_clear_code <= '0';
-                    alarm_siren_flag <= '0'; -- Turn off siren
                     system_armed_flag <= '0';
+                    alarm_siren_flag <= '0'; -- Turn off siren
                     s_attempts <= 0; -- Reset attempts
 
                     current_state <= ST_ARMED; -- On next clock rise, move to ST_ARMED to re-ARM the machine
+                
+                when ST_LOCK =>
+                    s_enable_press <= '0'; -- Don`t allow pressing
+                    system_armed_flag <= '0';
+                    alarm_siren_flag <= '1';
+                    s_attempts <= 7; -- Keep display on 7 during lockout
 
+                    if (s_lock_cntr = 5) then -- Wait for 5 Clk cycles
+                        s_lock_cntr <= 0;
+                        s_attempts <= 0;
+                        current_state <= ST_ATTEMPTS;
+                    else
+                        s_lock_cntr <= s_lock_cntr + 1;
+                    end if;
+                    
             end case;
         end if;
     end process;
@@ -139,6 +149,7 @@ begin
                       ASCII_A when ST_ALERT,
                       ASCII_F when ST_CORRECT,
                       std_logic_vector(to_unsigned(48 + s_attempts, 8)) when ST_ATTEMPTS,
+                      ASCII_DASH when ST_LOCK,
                       ASCII_DASH when others;
 
 
