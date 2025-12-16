@@ -50,7 +50,7 @@ debouncer_door_process : process(Clk, Rst)
 begin
     -- Asynchronous Reset
     if Rst = '1' then
-        door_int <= 'Z';
+        door_int <= '0';
         count_door <= (others => '0');
         
     -- Synchronous Clock Edge
@@ -77,7 +77,7 @@ end process debouncer_door_process;
 debouncer_window_process : process(Clk, Rst)
 begin
     if Rst = '1' then
-        window_int <= 'Z';
+        window_int <= '0';
         count_window <= (others => '0');
     elsif RISING_EDGE(Clk) then
         if window_sens = window_int then
@@ -98,7 +98,7 @@ end process debouncer_window_process;
 debouncer_motion_process : process(Clk, Rst)
 begin
     if Rst = '1' then
-        motion_int <= 'Z';
+        motion_int <= '0';
         count_motion <= (others => '0');
     elsif RISING_EDGE(Clk) then
         if motion_sens = motion_int then
@@ -116,16 +116,18 @@ end process debouncer_motion_process;
 
 -- Output Connections
 -- Connect debounced state signals to the external output ports
-door_clean   <= door_int;
-window_clean <= window_int;
-motion_clean <= motion_int;
+door_clean   <= 'Z' when Rst = '1' else door_int;
+window_clean <= 'Z' when Rst = '1' else window_int;
+motion_clean <= 'Z' when Rst = '1' else motion_int;
 
 -- Detection Logic 
 -- 'detected' is active if at least two clean signals are '1'.
-detected <= '1' when (
-    (door_int = '1' and window_int = '1') or -- Door AND Window
-    (door_int = '1' and motion_int = '1') or -- Door AND Motion
-    (window_int = '1' and motion_int = '1')  -- Window AND Motion
-) else '0';
+detected <= 'Z' when Rst = '1' else 
+            '1' when (
+                (door_int = '1' and window_int = '1') or
+                (door_int = '1' and motion_int = '1') or
+                (window_int = '1' and motion_int = '1')
+            ) else 
+            '0';
     
 end architecture behavior;
