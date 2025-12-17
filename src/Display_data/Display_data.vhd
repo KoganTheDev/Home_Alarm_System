@@ -34,11 +34,11 @@ architecture behavior of Display_data is
     constant ASCII_DASH : std_logic_vector(7 downto 0) := x"2D"; -- '-'
 
     -- State Constants (Binary encoding matches N_bit=2 => 3 bits)
-    constant ST_OFF      : std_logic_vector(2 downto 0) := "000";
-    constant ST_ARMED    : std_logic_vector(2 downto 0) := "001";
-    constant ST_ALERT    : std_logic_vector(2 downto 0) := "010";
-    constant ST_CORRECT  : std_logic_vector(2 downto 0) := "011";
-    constant ST_ATTEMPTS : std_logic_vector(2 downto 0) := "100";
+    constant ST_OFF      : std_logic_vector(N_bit downto 0) := "000";
+    constant ST_ARMED    : std_logic_vector(N_bit downto 0) := "001";
+    constant ST_ALERT    : std_logic_vector(N_bit downto 0) := "010";
+    constant ST_CORRECT  : std_logic_vector(N_bit downto 0) := "011";
+    constant ST_ATTEMPTS : std_logic_vector(N_bit downto 0) := "100";
 
 begin
 

@@ -18,7 +18,7 @@ architecture test of alarm_Control_TB is
     signal S_clear_code         : std_logic;
     signal S_alarm_siren        : std_logic;
     signal S_system_armed       : std_logic;
-    signal S_state_code         : std_logic_vector(7 downto 0);
+    signal S_state_code         : std_logic_vector(2 downto 0);
     
     -- Integer Handling
     signal S_attempts_int       : integer range 0 to 7;
@@ -79,7 +79,7 @@ begin
         
         assert S_enable_press = 'Z' report "T1 FAIL: enable_press not High-Z on Reset" severity error;
         assert S_attempts_int = 0   report "T1 FAIL: attempts not 0 on Reset" severity error;
-        assert S_state_code = "ZZZZZZZZ" report "T1 FAIL: state_code not High-Z on Reset" severity error;
+        assert S_state_code = "ZZZ" report "T1 FAIL: state_code not High-Z on Reset" severity error;
         
         S_Rst <= '0';
         wait until rising_edge(S_Clk);

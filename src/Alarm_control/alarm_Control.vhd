@@ -22,7 +22,7 @@ entity alarm_Control is
             alarm_siren        : out std_logic;
             system_armed       : out std_logic;
             attempts           : out integer range 0 to 7;
-            state_code         : out std_logic_vector(7 downto 0) -- 8 bits for ASCII
+            state_code         : out std_logic_vector(2 downto 0) -- 8 bits for ASCII
         );
 end entity alarm_Control;
 
@@ -38,15 +38,19 @@ architecture behavior of alarm_Control is
     signal alarm_siren_flag : STD_LOGIC := '0';
     signal system_armed_flag : STD_LOGIC := '0';
     signal s_attempts : integer range 0 to 7 := 0;
-    signal s_state_code : std_logic_vector(7 downto 0);
+    signal s_state_code : std_logic_vector(2 downto 0);
     signal s_lock_cntr : integer range 0 to 5 := 0; -- Used to lock system for 5 Clk cycles
 
-    -- ASCII Constants (Hex values)
-    constant ASCII_0    : std_logic_vector(7 downto 0) := x"30"; -- '0'
-    constant ASCII_8    : std_logic_vector(7 downto 0) := x"38"; -- '8'
-    constant ASCII_A    : std_logic_vector(7 downto 0) := x"41"; -- 'A'
-    constant ASCII_F    : std_logic_vector(7 downto 0) := x"46"; -- 'F'
-    constant ASCII_DASH : std_logic_vector(7 downto 0) := x"2D"; -- '-'
+ 
+    constant VAL_ST_OFF      : std_logic_vector(2 downto 0) := "000";
+    constant VAL_ST_ARMED    : std_logic_vector(2 downto 0) := "001";
+    constant VAL_ST_ALERT    : std_logic_vector(2 downto 0) := "010";
+    constant VAL_ST_CORRECT  : std_logic_vector(2 downto 0) := "011";
+    constant VAL_ST_ATTEMPTS : std_logic_vector(2 downto 0) := "100";
+    constant VAL_ST_LOCK : std_logic_vector(2 downto 0) := "101";
+    constant VAL_ST_UKNOWN : std_logic_vector(2 downto 0) := "110";
+
+
 
 begin
     alarm_Control_process : process(Clk, Rst)
@@ -144,13 +148,13 @@ begin
     STATE_ASCII_GEN : process(current_state, s_attempts)
     begin
         case current_state is
-            when ST_OFF      => s_state_code <= ASCII_0;
-            when ST_ARMED    => s_state_code <= ASCII_8;
-            when ST_ALERT    => s_state_code <= ASCII_A;
-            when ST_CORRECT  => s_state_code <= ASCII_F;
-            when ST_LOCK     => s_state_code <= ASCII_DASH;
+            when ST_OFF      => s_state_code <= VAL_ST_OFF;
+            when ST_ARMED    => s_state_code <= VAL_ST_ARMED;
+            when ST_ALERT    => s_state_code <= VAL_ST_ALERT;
+            when ST_CORRECT  => s_state_code <= VAL_ST_CORRECT;
+            when ST_LOCK     => s_state_code <= VAL_ST_LOCK;
             when ST_ATTEMPTS => s_state_code <= std_logic_vector(to_unsigned(48 + s_attempts, 8));
-            when others      => s_state_code <= ASCII_DASH;
+            when others      => s_state_code <= VAL_ST_UKNOWN;
         end case;
     end process STATE_ASCII_GEN;
 

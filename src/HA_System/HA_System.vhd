@@ -23,7 +23,7 @@ entity HA_System is
         alarm_siren  : out std_logic;
         system_armed : out std_logic;
         sens_dbg     : out std_logic_vector(2 downto 0);
-        display_data : out std_logic_vector(8 downto 0) 
+        output_display_data : out std_logic_vector(7 downto 0)  -- Changed the name from display_data to output_display_data to solve a naming bug
     );
 end HA_System;
 
@@ -65,7 +65,7 @@ architecture behavior of HA_System is
         );
     end component;
 
-    component Alarm_controller_FSM
+    component Alarm_Control
         port (
             Clk                : in  std_logic;
             Rst                : in  std_logic;
@@ -81,13 +81,13 @@ architecture behavior of HA_System is
         );
     end component;
 
-    component Display_data_module 
+    component Display_data 
             port (
         clk        : in  std_logic;
         Rst        : in  std_logic;
         state_code : in  std_logic_vector(2 downto 0);
-        attempts   : in  integer range 0 to 3; 
-        data       : out std_logic_vector(8 downto 0)  
+        attempts   : in  integer range 0 to 7; 
+        data       : out std_logic_vector(7 downto 0)  
     );
     end component;
 
@@ -101,9 +101,9 @@ signal s_code_match         : std_logic;
 signal s_intrusion_detected : std_logic;
 signal s_enable_press       : std_logic;
 signal s_clear_code         : std_logic;
-signal s_attempts           : integer range 0 to 3; 
+signal s_attempts           : integer range 0 to 7; 
 signal s_state_code         : std_logic_vector(2 downto 0);
-signal s_data               : std_logic_vector(8 downto 0); 
+signal s_data               : std_logic_vector(7 downto 0); 
 
 signal door_clean           : std_logic;
 signal window_clean         : std_logic;
@@ -148,7 +148,7 @@ begin
         );
 
     -- Alarm controller FSM
-    U3 : Alarm_controller_FSM
+    U3 : Alarm_Control
         port map (
             Clk                => Clk,
             Rst                => Rst,
@@ -164,7 +164,7 @@ begin
         );
 
     -- Display module
-    U4 : Display_data_module
+    U4 : Display_data
         port map (
             clk        => Clk,
             Rst        => Rst,
@@ -175,7 +175,7 @@ begin
 
     -- Outputs to top-level ports
     sens_dbg     <= motion_clean & window_clean & door_clean;
-    display_data <= s_data;
+    output_display_data <= s_data;
     
 
 end architecture behavior;
