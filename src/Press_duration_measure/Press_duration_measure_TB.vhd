@@ -15,11 +15,8 @@ end Press_duration_measure_tb;
 
 architecture behavior of Press_duration_measure_tb is
 
-    -- Component Declaration
     component Press_duration_measure
-        generic (
-            K : integer := 3
-        );
+        generic ( K : integer := 3 );
         port (
             Clk       : in  std_logic;
             Rst       : in  std_logic;
@@ -38,105 +35,109 @@ architecture behavior of Press_duration_measure_tb is
     signal tb_bit_out   : std_logic;
     signal tb_bit_valid : std_logic;
 
-    -- Simulation Constants
     constant clk_period : time := 10 ns;
-    constant TEST_K     : integer := 5; -- Threshold for TB
+    constant TEST_K     : integer := 3;
 
 begin
 
-    -- Instantiate the Unit Under Test (UUT)
     uut: Press_duration_measure
-        generic map (
-            K => TEST_K -- Set threshold to 5 cycles for this test
-        )
+        generic map ( K => TEST_K )
         port map (
-            Clk       => tb_Clk,
-            Rst       => tb_Rst,
-            btn_in    => tb_btn_in,
-            enable    => tb_enable,
-            bit_out   => tb_bit_out,
+            Clk => tb_Clk,
+            Rst => tb_Rst,
+            btn_in => tb_btn_in,
+            enable => tb_enable,
+            bit_out => tb_bit_out,
             bit_valid => tb_bit_valid
         );
 
-    -- Clock Process
+    -- Clock Generation
     clk_process : process
     begin
-        tb_Clk <= '0';
-        wait for clk_period/2;
-        tb_Clk <= '1';
-        wait for clk_period/2;
+        tb_Clk <= '0'; wait for clk_period/2;
+        tb_Clk <= '1'; wait for clk_period/2;
     end process;
 
     -- Stimulus Process
     stim_proc: process
+        -- Helper procedure to simulate a button press for N cycles
+        procedure press_button(cycles : integer) is
+        begin
+            wait until falling_edge(tb_Clk);
+            tb_btn_in <= '1';
+            for i in 1 to cycles loop
+                wait until falling_edge(tb_Clk);
+            end loop;
+            tb_btn_in <= '0';
+        end procedure;
+
     begin
-        report "Starting Simulation..." severity note;
+        report "--- Starting Extensive Testbench ---" severity note;
 
-        
-        -- 1. Reset System
+        -----------------------------------------------------------
+        -- TEST 1: ASYNCHRONOUS RESET
+        -----------------------------------------------------------
         tb_Rst <= '1';
-        wait for 20 ns;
+        wait for 15 ns;
+        assert (tb_bit_out = 'Z' and tb_bit_valid = 'Z')
+            report "FAIL TEST 1: Reset did not result in 'Z' outputs" severity failure;
+        
         tb_Rst <= '0';
-        tb_enable <= '1'; -- Enable the system
-        wait for clk_period;
+        tb_enable <= '1';
+        wait until falling_edge(tb_Clk);
+        assert (tb_bit_out = '0' and tb_bit_valid = '0')
+            report "FAIL TEST 1: Post-reset state not '0'" severity failure;
 
-        -- 2. Test SHORT Press (2 cycles, K=5)
-        report "Test 1: Generating SHORT Press (2 cycles)..." severity note;
-        
-        tb_btn_in <= '1';
-        wait for 2 * clk_period; -- Hold for 2 clocks
-        tb_btn_in <= '0';        -- Release
-        
-        -- Wait for processing (needs 1-2 clocks to detect edge and output)
-        wait for 2 * clk_period; 
+        -----------------------------------------------------------
+        -- TEST 2: SHORT PRESS (2 Cycles, K=3)
+        -----------------------------------------------------------
+        report "TEST 2: Short Press (2 cycles)...";
+        press_button(2); 
 
-        -- Check results
-        assert tb_bit_valid = '1' report "Error: Valid bit not High for Short Press" severity error;
-        assert tb_bit_out = '0'   report "Error: Output should be '0' (Short)" severity error;
-        
-        report "Short Press Verified." severity note;
-        
-        -- Wait for valid pulse to finish (2 cycles total)
-        wait for 2 * clk_period; 
-        assert tb_bit_valid = '0' report "Error: Valid bit did not go Low" severity error;
+        -- Logic detects falling edge at the next Rising Edge.
+        -- We check on the Falling Edge to ensure signal stability.
+        wait until falling_edge(tb_Clk); -- Pulse Cycle 1
+        assert (tb_bit_valid = '1' and tb_bit_out = '0') report "FAIL TEST 2: Pulse 1" severity failure;
+        wait until falling_edge(tb_Clk); -- Pulse Cycle 2
+        assert (tb_bit_valid = '1' and tb_bit_out = '0') report "FAIL TEST 2: Pulse 2" severity failure;
+        wait until falling_edge(tb_Clk); -- Pulse End
+        assert (tb_bit_valid = '0') report "FAIL TEST 2: Pulse did not end" severity failure;
 
-        wait for 20 ns; -- Gap between tests
-
-        
-        -- 3. Test LONG Press (7 cycles, K=5)
-        report "Test 2: Generating LONG Press (7 cycles)..." severity note;
-        
-        tb_btn_in <= '1';
-        wait for 7 * clk_period; -- Hold for 7 clocks
-        tb_btn_in <= '0';        -- Release
-        
-        wait for 2 * clk_period; -- Allow edge detection
-        
-        -- Check results
-        assert tb_bit_valid = '1' report "Error: Valid bit not High for Long Press" severity error;
-        assert tb_bit_out = '1'   report "Error: Output should be '1' (Long)" severity error;
-        
-        report "Long Press Verified." severity note;
+        -----------------------------------------------------------
+        -- TEST 3: LONG PRESS (4 Cycles, K=3)
+        -----------------------------------------------------------
+        report "TEST 3: Long Press (4 cycles)...";
         wait for 2 * clk_period;
+        press_button(4);
 
-        -- 4. Test ENABLE = '0' (Ignored Press)
-        report "Test 3: Testing Disabled State..." severity note;
-        
-        tb_enable <= '0'; -- Disable
-        wait for clk_period;
-        
-        tb_btn_in <= '1';
-        wait for 10 * clk_period; -- Very long press
-        tb_btn_in <= '0';
-        
+        wait until falling_edge(tb_Clk); -- Pulse Cycle 1
+        assert (tb_bit_valid = '1' and tb_bit_out = '1') report "FAIL TEST 3: Pulse 1" severity failure;
+        wait until falling_edge(tb_Clk); -- Pulse Cycle 2
+        assert (tb_bit_valid = '1' and tb_bit_out = '1') report "FAIL TEST 3: Pulse 2" severity failure;
+
+        -----------------------------------------------------------
+        -- TEST 4: DISABLED STATE
+        -----------------------------------------------------------
+        report "TEST 4: Enable = '0' Suppression...";
+        tb_enable <= '0';
         wait for 2 * clk_period;
+        press_button(5); -- Long press, but disabled
         
-        assert tb_bit_valid = '0' report "Error: Generated output while Disabled!" severity error;
-        report "Disabled State Verified." severity note;
- 
-        -- End Simulation
-        report "Simulation Completed Successfully." severity note;
+        wait for 3 * clk_period;
+        assert (tb_bit_valid = '0') report "FAIL TEST 4: Output produced while disabled" severity failure;
+
+        -----------------------------------------------------------
+        -- TEST 5: EXACT BOUNDARY (3 Cycles, K=3)
+        -----------------------------------------------------------
+        report "TEST 5: Boundary Press (3 cycles, K=3)...";
+        tb_enable <= '1';
+        wait for 2 * clk_period;
+        press_button(3); 
+
+        wait until falling_edge(tb_Clk);
+        assert (tb_bit_valid = '1' and tb_bit_out = '1') report "FAIL TEST 5: Boundary 3 cycles should be LONG" severity failure;
+
+        report "--- ALL TESTS PASSED SUCCESSFULLY ---" severity note;
         wait;
     end process;
-
-end behavior;
+end architecture;

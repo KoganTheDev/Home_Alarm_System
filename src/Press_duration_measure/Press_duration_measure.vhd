@@ -12,83 +12,84 @@ use ieee.numeric_std.all;
 
 entity Press_duration_measure is
     generic (
-        K : integer := 3  -- threshold in clock cycles for a "long" press
+        K : integer := 3
     );
     port (
         Clk       : in  std_logic;
-        Rst       : in  std_logic;    -- asynchronous reset
-        btn_in    : in  std_logic;    -- raw button input (assumed clean)
-        enable    : in  std_logic;    -- measurement enable
-        bit_out   : out std_logic;    -- 0 = short, 1 = long
-        bit_valid : out std_logic     -- 2-clock pulse indicating bit_out valid
+        Rst       : in  std_logic;
+        btn_in    : in  std_logic;
+        enable    : in  std_logic;
+        bit_out   : out std_logic;
+        bit_valid : out std_logic
     );
 end Press_duration_measure;
 
 architecture behavior of Press_duration_measure is
-    signal btn_prev    : std_logic := '0';
-    signal count       : natural := 0;      -- Used 'natural' prevents negative numbers
-    signal pressing    : std_logic := '0';
-    signal last_bit    : std_logic := '0';
-    signal valid_count : natural range 0 to 2 := 0; 
-begin
+    signal btn_prev     : std_logic := '0';
+    signal count        : integer := 0; 
+    signal pressing     : std_logic := '0';
+    signal last_bit_reg : std_logic := '0';
+    signal valid_reg    : std_logic := '0';
+    signal valid_count  : integer range 0 to 2 := 0; 
+begin                  
 
     process(Clk, Rst)
     begin
         if Rst = '1' then
-            btn_prev    <= 'Z';
-            count       <= 0;
-            pressing    <= 'Z';
-            last_bit    <= 'Z';
-            valid_count <= 0;
-            bit_out     <= 'Z';
-            bit_valid   <= 'Z';
+            btn_prev     <= '0';
+            count        <= 0;
+            pressing     <= '0';
+            valid_count  <= 0;
+            last_bit_reg <= '0';
+            valid_reg    <= '0';
 
         elsif rising_edge(Clk) then
-            -- 1. Default: capture previous button value for edge detection
             btn_prev <= btn_in;
 
-            -- 2. Handle Output Pulse (Default behavior)
+            -- 1. Pulse management
             if valid_count > 0 then
-                bit_valid   <= '1';
-                bit_out     <= last_bit;   -- output the calculated length
                 valid_count <= valid_count - 1;
+                valid_reg   <= '1';
             else
-                bit_valid <= '0';
-                bit_out   <= '0';
+                valid_reg    <= '0';
+                last_bit_reg <= '0';
             end if;
 
-            -- 3. Handle Input Logic (Overrides Valid Count if a new release occurs)
+            -- 2. Measurement Logic
             if enable = '1' then
-                
-                -- Detect Rising Edge (Start Press)
-                if btn_prev = '0' and btn_in = '1' then
+                -- Falling Edge (Button Release)
+                if btn_prev = '1' and btn_in = '0' and pressing = '1' then
+                    if count >= K then
+                        last_bit_reg <= '1'; -- Long press
+                    else
+                        last_bit_reg <= '0'; -- Short press
+                    end if;
+                    
+                    valid_reg   <= '1';
+                    valid_count <= 1; -- Ensures total 2 clock cycles of '1'
+                    pressing    <= '0';
+                    count       <= 0;
+                    
+                -- Rising Edge (Button Press Start)
+                elsif btn_prev = '0' and btn_in = '1' then
                     pressing <= '1';
                     count    <= 1;
 
-                -- Continue Counting (Holding)
+                -- Continue Holding
                 elsif pressing = '1' and btn_in = '1' then
                     count <= count + 1;
-
-                -- Detect Falling Edge (Release)
-                elsif pressing = '1' and btn_prev = '1' and btn_in = '0' then
-                    -- Determine Short vs Long
-                    if count >= K then
-                        last_bit <= '1'; -- Long Press
-                    else
-                        last_bit <= '0'; -- Short Press
-                    end if;
-                    
-                    valid_count <= 2; -- Trigger the 2-clock pulse (overrides the decrement above)
-                    pressing    <= '0';
-                    count       <= 0;
                 end if;
-            
             else
-                -- If disabled, clear internal state
-                pressing <= '0';
-                count    <= 0;
+                -- Clear state if disabled
+                pressing    <= '0';
+                count       <= 0;
+                valid_count <= 0;
+                valid_reg   <= '0';
             end if;
         end if;
     end process;
+
+    bit_out   <= 'Z' when Rst = '1' else last_bit_reg;
+    bit_valid <= 'Z' when Rst = '1' else valid_reg;
 
 end architecture behavior;
