@@ -38,8 +38,8 @@ architecture behavior of alarm_Control is
     signal alarm_siren_flag : STD_LOGIC := '0';
     signal system_armed_flag : STD_LOGIC := '0';
     signal s_attempts : integer range 0 to 7 := 0;
+    signal s_state_code : std_logic_vector(7 downto 0);
     signal s_lock_cntr : integer range 0 to 5 := 0; -- Used to lock system for 5 Clk cycles
-
 
     -- ASCII Constants (Hex values)
     constant ASCII_0    : std_logic_vector(7 downto 0) := x"30"; -- '0'
@@ -90,22 +90,26 @@ begin
 
                 when ST_ATTEMPTS =>
                     if (code_ready = '0') then
-                        -- Code Entry logic, allow the password to be entered
                         s_enable_press <= '1';
                         s_clear_code <= '0';
-
-                    else -- code_ready == 1
+                    else 
                         s_enable_press <= '0';
-                        s_clear_code <= '1'; -- Clear code for next attempt if any
+                        s_clear_code <= '1'; 
 
-                        if (s_attempts = 7) then -- attempt limit, move to ST_LOCK
-                                current_state <= ST_LOCK;
-                        elsif (code_match = '1') then -- Correct code, re-ARM the system
-                                current_state <= ST_CORRECT;
+                        -- Priority 1: Check if the code is correct
+                        if (code_match = '1') then 
+                            current_state <= ST_CORRECT;
+                        
+                        -- Priority 2: If wrong, check if we hit the limit
+                        elsif (s_attempts >= 7) then 
+                            s_lock_cntr <= 0; -- Initialize lockout timer
+                            current_state <= ST_LOCK;
+                        
+                        -- Priority 3: Increment attempt counter
                         else
-                            s_attempts <= s_attempts + 1; -- attmepts += 1
+                            s_attempts <= s_attempts + 1;
                         end if;
-                    end if;
+                    end if;               
 
                 when ST_CORRECT =>
                     -- Code Correct logic
@@ -118,16 +122,17 @@ begin
                     current_state <= ST_ARMED; -- On next clock rise, move to ST_ARMED to re-ARM the machine
                 
                 when ST_LOCK =>
-                    s_enable_press <= '0'; -- Don`t allow pressing
-                    system_armed_flag <= '0';
-                    alarm_siren_flag <= '1';
-                    s_attempts <= 7; -- Keep display on 7 during lockout
+                    s_enable_press <= '0'; -- Don't allow pressing
+                    system_armed_flag <= '0'; 
+                    alarm_siren_flag <= '1'; -- Make sure siren is ON
+                    s_attempts <= 7; -- Set attempts to 7 to be displayed
 
-                    if (s_lock_cntr = 5) then -- Wait for 5 Clk cycles
+                    -- Lock for 4 clock cycles, on the 5th cycle, release lock
+                    if (s_lock_cntr = 4) then 
                         s_lock_cntr <= 0;
                         s_attempts <= 0;
                         current_state <= ST_ATTEMPTS;
-                    else
+                    else 
                         s_lock_cntr <= s_lock_cntr + 1;
                     end if;
                     
@@ -135,22 +140,26 @@ begin
         end if;
     end process;
 
-    -- Output assignments based on internal signals
-    enable_press <= s_enable_press;
-    alarm_siren <= alarm_siren_flag;
-    system_armed <= system_armed_flag;
-    clear_code <= s_clear_code;
-    attempts <= s_attempts;
-    
-    -- Map current_state to an ASCII code for `state_code` using a selected signal assignment
-    with current_state select
-        state_code <= ASCII_0 when ST_OFF,
-                      ASCII_8 when ST_ARMED,
-                      ASCII_A when ST_ALERT,
-                      ASCII_F when ST_CORRECT,
-                      std_logic_vector(to_unsigned(48 + s_attempts, 8)) when ST_ATTEMPTS,
-                      ASCII_DASH when ST_LOCK,
-                      ASCII_DASH when others;
+    -- Change state according to current_state/s_attempts
+    STATE_ASCII_GEN : process(current_state, s_attempts)
+    begin
+        case current_state is
+            when ST_OFF      => s_state_code <= ASCII_0;
+            when ST_ARMED    => s_state_code <= ASCII_8;
+            when ST_ALERT    => s_state_code <= ASCII_A;
+            when ST_CORRECT  => s_state_code <= ASCII_F;
+            when ST_LOCK     => s_state_code <= ASCII_DASH;
+            when ST_ATTEMPTS => s_state_code <= std_logic_vector(to_unsigned(48 + s_attempts, 8));
+            when others      => s_state_code <= ASCII_DASH;
+        end case;
+    end process STATE_ASCII_GEN;
 
+    -- Set output signals        
+    enable_press <= 'Z' when Rst = '1' else s_enable_press;
+    alarm_siren  <= 'Z' when Rst = '1' else alarm_siren_flag;
+    system_armed <= 'Z' when Rst = '1' else system_armed_flag;
+    clear_code   <= 'Z' when Rst = '1' else s_clear_code;
+    attempts     <= 0 when Rst = '1' else s_attempts;
+    state_code   <= (others => 'Z') when Rst = '1' else s_state_code;
 
 end architecture behavior;
