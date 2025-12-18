@@ -93,27 +93,22 @@ begin
                     current_state <= ST_ATTEMPTS; -- Move automatically to the Code check logic block
 
                 when ST_ATTEMPTS =>
-                    if (code_ready = '0') then
-                        s_enable_press <= '1';
-                        s_clear_code <= '0';
-                    else 
+                    if (code_ready = '1') then
                         s_enable_press <= '0';
                         s_clear_code <= '1'; 
-
-                        -- Priority 1: Check if the code is correct
                         if (code_match = '1') then 
                             current_state <= ST_CORRECT;
-                        
-                        -- Priority 2: If wrong, check if we hit the limit
-                        elsif (s_attempts >= 7) then 
-                            s_lock_cntr <= 0; -- Initialize lockout timer
+                        elsif (s_attempts = 6) then -- 7th failure
+                            s_attempts <= 7;
+                            s_lock_cntr <= 0;
                             current_state <= ST_LOCK;
-                        
-                        -- Priority 3: Increment attempt counter
                         else
                             s_attempts <= s_attempts + 1;
                         end if;
-                    end if;               
+                    else
+                        s_enable_press <= '1';
+                        s_clear_code <= '0';
+                    end if;            
 
                 when ST_CORRECT =>
                     -- Code Correct logic
