@@ -48,7 +48,8 @@ architecture behavior of HA_System is
             bit_in     : in  std_logic;
             valid      : in  std_logic;
             Code_ready : out std_logic;
-            code_match : out std_logic
+            code_match : out std_logic;
+            code_vector : out STD_LOGIC_VECTOR
         );
     end component;
 
@@ -131,14 +132,15 @@ begin
             bit_in     => s_bit_out,
             valid      => s_bit_valid,
             Code_ready => s_code_ready,
-            code_match => s_code_match
+            code_match => s_code_match,
+            code_vector => open
         );
         
     -- Sensors logic
     U2 : Sensors_logic
         port map (
             Clk          => Clk,
-            Rst          => s_clear_code,
+            Rst          => Rst,
             door_sens    => door_raw,
             window_sens  => window_raw,
             motion_sens  => motion_raw,
