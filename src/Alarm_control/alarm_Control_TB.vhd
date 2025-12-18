@@ -122,8 +122,8 @@ begin
             wait for CLK_PERIOD * 2;
         end loop;
 
-        -- Verify state_code is ASCII DASH '-' (x"2D")
-        assert S_state_code = x"2D" report "T3 FAIL: System not in LOCK state code" severity error;
+        -- Verify state_code is ("111")
+        assert S_state_code = "101" report "T3 FAIL: System not in LOCK state code" severity error;
         report "T3 PASS: System Locked out successfully";
 
         -----------------------------------------------------------

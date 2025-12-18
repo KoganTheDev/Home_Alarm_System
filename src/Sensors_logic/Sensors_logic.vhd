@@ -44,75 +44,74 @@ architecture behavior of Sensors_logic is
     
 begin
 
-
--- Door Sensor Debouncer
-debouncer_door_process : process(Clk, Rst)
-begin
-    -- Asynchronous Reset
-    if Rst = '1' then
-        door_int <= '0';
-        count_door <= (others => '0');
-        
-    -- Synchronous Clock Edge
-    elsif RISING_EDGE(Clk) then
-        
-        -- If the raw input matches the current debounced state, reset the counter.
-        if door_sens = door_int then
-            count_door <= (others => '0'); 
-        else
-            -- Signal has changed: start/continue counting
-            if count_door < DEBOUNCE_THRESHOLD then
-                count_door <= count_door + 1;
+    -- Door Sensor Debouncer
+    debouncer_door_process : process(Clk, Rst)
+    begin
+        -- Asynchronous Reset
+        if Rst = '1' then
+            door_int <= '0';
+            count_door <= (others => '0');
+            
+        -- Synchronous Clock Edge
+        elsif RISING_EDGE(Clk) then
+            
+            -- If the raw input matches the current debounced state, reset the counter.
+            if door_sens = door_int then
+                count_door <= (others => '0'); 
             else
-                -- Counter reached threshold: update the output's state
-                door_int <= door_sens;
-                count_door <= (others => '0'); -- Reset after update
+                -- Signal has changed: start/continue counting
+                if count_door < DEBOUNCE_THRESHOLD then
+                    count_door <= count_door + 1;
+                else
+                    -- Counter reached threshold: update the output's state
+                    door_int <= door_sens;
+                    count_door <= (others => '0'); -- Reset after update
+                end if;
             end if;
         end if;
-    end if;
-end process debouncer_door_process;
+    end process debouncer_door_process;
 
 
--- Window Sensor Debouncer 
-debouncer_window_process : process(Clk, Rst)
-begin
-    if Rst = '1' then
-        window_int <= '0';
-        count_window <= (others => '0');
-    elsif RISING_EDGE(Clk) then
-        if window_sens = window_int then
+    -- Window Sensor Debouncer 
+    debouncer_window_process : process(Clk, Rst)
+    begin
+        if Rst = '1' then
+            window_int <= '0';
             count_window <= (others => '0');
-        else
-            if count_window < DEBOUNCE_THRESHOLD then
-                count_window <= count_window + 1;
-            else
-                window_int <= window_sens;
+        elsif RISING_EDGE(Clk) then
+            if window_sens = window_int then
                 count_window <= (others => '0');
-            end if;
-        end if;
-    end if;
-end process debouncer_window_process;
-
-
--- Motion Sensor Debouncer
-debouncer_motion_process : process(Clk, Rst)
-begin
-    if Rst = '1' then
-        motion_int <= '0';
-        count_motion <= (others => '0');
-    elsif RISING_EDGE(Clk) then
-        if motion_sens = motion_int then
-            count_motion <= (others => '0');
-        else
-            if count_motion < DEBOUNCE_THRESHOLD then
-                count_motion <= count_motion + 1;
             else
-                motion_int <= motion_sens;
-                count_motion <= (others => '0');
+                if count_window < DEBOUNCE_THRESHOLD then
+                    count_window <= count_window + 1;
+                else
+                    window_int <= window_sens;
+                    count_window <= (others => '0');
+                end if;
             end if;
         end if;
-    end if;
-end process debouncer_motion_process;
+    end process debouncer_window_process;
+
+
+    -- Motion Sensor Debouncer
+    debouncer_motion_process : process(Clk, Rst)
+    begin
+        if Rst = '1' then
+            motion_int <= '0';
+            count_motion <= (others => '0');
+        elsif RISING_EDGE(Clk) then
+            if motion_sens = motion_int then
+                count_motion <= (others => '0');
+            else
+                if count_motion < DEBOUNCE_THRESHOLD then
+                    count_motion <= count_motion + 1;
+                else
+                    motion_int <= motion_sens;
+                    count_motion <= (others => '0');
+                end if;
+            end if;
+        end if;
+    end process debouncer_motion_process;
 
 -- Output Connections
 -- Connect debounced state signals to the external output ports

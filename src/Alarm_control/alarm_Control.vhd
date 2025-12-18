@@ -6,6 +6,7 @@
 -- Created Date: 04/12/25
 ----------------------------------------------------
 
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
@@ -143,8 +144,8 @@ begin
         end if;
     end process;
 
-    -- Change state according to current_state/s_attempts
-    STATE_ASCII_GEN : process(current_state, s_attempts)
+    
+    PRODUCE_STATE_VALUE : process(current_state)
     begin
         case current_state is
             when ST_OFF      => s_state_code <= VAL_ST_OFF;
@@ -152,10 +153,10 @@ begin
             when ST_ALERT    => s_state_code <= VAL_ST_ALERT;
             when ST_CORRECT  => s_state_code <= VAL_ST_CORRECT;
             when ST_LOCK     => s_state_code <= VAL_ST_LOCK;
-            when ST_ATTEMPTS => s_state_code <= std_logic_vector(to_unsigned(48 + s_attempts, 3));
+            when ST_ATTEMPTS => s_state_code <= VAL_ST_ATTEMPTS;
             when others      => s_state_code <= VAL_ST_UKNOWN;
         end case;
-    end process STATE_ASCII_GEN;
+    end process PRODUCE_STATE_VALUE;
 
     -- Set output signals        
     enable_press <= 'Z' when Rst = '1' else s_enable_press;

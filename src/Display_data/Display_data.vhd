@@ -2,9 +2,9 @@
 -- Project Name: HA_System
 -- File Name: Display_data.vhd
 -- Author: Roni Shifrin
--- Description: Converts system state codes and attempts 
---              into ASCII characters for display.
+-- Created Date: 23/11/25
 ----------------------------------------------------
+
 
 library ieee;
 use ieee.std_logic_1164.all;
