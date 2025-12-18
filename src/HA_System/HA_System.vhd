@@ -49,7 +49,7 @@ architecture behavior of HA_System is
             valid      : in  std_logic;
             Code_ready : out std_logic;
             code_match : out std_logic;
-            code_vector : out STD_LOGIC_VECTOR
+            code_vector : out std_logic_vector(1 downto 0)
         );
     end component;
 

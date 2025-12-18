@@ -1,22 +1,18 @@
 --------------------- Title ------------------------
 -- Project Name: HA_System
--- File Name: HW_SYSTEM_TB.vhd
--- Author: Yuval Kogan
--- Ver: 1
--- Created Date: 4/12/25
+-- File Name: HA_System_TB.vhd
+-- Author: Logic Adjusted for 2-out-of-3
 ----------------------------------------------------
 
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity HW_SYSTEM_TB is
-    -- Testbench has no ports
-end HW_SYSTEM_TB;
+entity HA_System_TB is
+end HA_System_TB;
 
-architecture behavior of HW_SYSTEM_TB is
+architecture behavior of HA_System_TB is
 
-    -- Component Declaration
     component HA_System
     port(
         Clk                 : in  std_logic;
@@ -46,31 +42,28 @@ architecture behavior of HW_SYSTEM_TB is
     signal tb_sens_dbg     : std_logic_vector(2 downto 0);
     signal tb_display_data : std_logic_vector(7 downto 0);
 
-    -- Clock definition
-    constant CLK_PERIOD : time := 10 ns; -- 100 MHz
+    constant CLK_PERIOD : time := 10 ns; 
 
-    -- User Configurable Constants (Adjust according to your logic)
-    constant T_SHORT_PRESS : time := 20 ms;  -- Short press duration ('0')
-    constant T_LONG_PRESS  : time := 500 ms; -- Long press duration ('1')
-    constant T_GAP         : time := 50 ms;  -- Gap between presses
+    -- ??????? (K=3)
+    constant T_SHORT_PRESS : time := 15 ns;  
+    constant T_LONG_PRESS  : time := 50 ns;  
+    constant T_GAP         : time := 40 ns;  
 
 begin
 
-    -- Instantiate the UUT
     uut: HA_System PORT MAP (
-        Clk          => tb_Clk,
-        Rst          => tb_Rst,
-        pass_btn     => tb_pass_btn,
-        door_raw     => tb_door_raw,
-        window_raw   => tb_window_raw,
-        motion_raw   => tb_motion_raw,
-        alarm_siren  => tb_alarm_siren,
-        system_armed => tb_system_armed,
-        sens_dbg     => tb_sens_dbg,
+        Clk                 => tb_Clk,
+        Rst                 => tb_Rst,
+        pass_btn            => tb_pass_btn,
+        door_raw            => tb_door_raw,
+        window_raw          => tb_window_raw,
+        motion_raw          => tb_motion_raw,
+        alarm_siren         => tb_alarm_siren,
+        system_armed        => tb_system_armed,
+        sens_dbg            => tb_sens_dbg,
         output_display_data => tb_display_data
     );
 
-    -- Clock Process
     Clk_process :process
     begin
         tb_Clk <= '0';
@@ -79,10 +72,7 @@ begin
         wait for CLK_PERIOD/2;
     end process;
 
-    -- Stimulus Process
     stim_proc: process
-        
-        -- Helper Procedure: Short Press
         procedure press_short is
         begin
             tb_pass_btn <= '1';
@@ -91,7 +81,6 @@ begin
             wait for T_GAP;
         end procedure press_short;
 
-        -- Helper Procedure: Long Press
         procedure press_long is
         begin
             tb_pass_btn <= '1';
@@ -100,113 +89,65 @@ begin
             wait for T_GAP;
         end procedure press_long;
 
-    begin		
+    begin       
         -- =========================================================
-        -- 1. Initialization & Reset
+        -- 1. ?????
         -- =========================================================
-        report "Starting Simulation: System Reset";
+        report "Starting Simulation";
         tb_Rst <= '1';
-        wait for 100 ns;	
+        wait for 100 ns;    
         tb_Rst <= '0';
         wait for 100 ns;
 
-        -- =========================================================
-        -- 2. Scenario: Wrong Code Entry (Check Failed Attempts)
-        -- =========================================================
-        report "Scenario 2: Entering Wrong Code";
-        -- Assume correct code is 4 short presses, we insert a long one to fail it
-        press_short;
-        press_long;  -- Error!
-        press_short;
-        press_short;
-        
-        wait for 200 ms;
-        -- Check: System should NOT be armed
-        assert tb_system_armed = '0' report "Error: System Armed with wrong code!" severity error;
+        -- ?????: ?????? ????? ????? ???? ????!
+        assert tb_system_armed = '1' report "Error: System should start ARMED" severity error;
 
         -- =========================================================
-        -- 3. Scenario: Successful Arming (Entering correct code)
+        -- 2. ????? ????? (??? ?????? ?????)
+        -- ??????: ??????? 2 ??????? ??? ????? ????? ?? 2 ???? 3
         -- =========================================================
-        report "Scenario 3: Entering Correct Code to ARM";
-        -- Assuming 4 short presses. Change to long if your password differs
-        press_short; 
-        press_short;
-        press_short;
-        press_short;
-
-        wait for 200 ms; -- Time for FSM processing
-        
-        -- Check: System should be ARMED
-        if tb_system_armed = '1' then
-            report "System Successfully ARMED";
-        else
-            report "Error: System failed to ARM" severity error;
-        end if;
-
-        -- =========================================================
-        -- 4. Scenario: Intrusion Detected (Window)
-        -- =========================================================
-        report "Scenario 4: Intrusion on Window Sensor";
-        wait for 100 ms;
+        report "Scenario: Intrusion Detected (Window + Motion)";
         tb_window_raw <= '1';
-        wait for 100 ms; -- Simulate window opening
+        tb_motion_raw <= '1'; -- ?????? ????? ???
+        
+        wait for 100 ns; -- ??? ?-Debounce
+        
+        -- ????? ?? ???????? (?????? ????? ?????? ?????)
         tb_window_raw <= '0';
-
-        wait for 50 ms;
-        -- Check: Alarm should trigger
-        assert tb_alarm_siren = '1' report "Error: Siren did not trigger on window breach!" severity error;
-
-        -- =========================================================
-        -- 5. Scenario: Disarm System (Stop Siren)
-        -- =========================================================
-        report "Scenario 5: Entering Code to DISARM";
-        wait for 1 sec; -- Let the alarm run for a bit
-        
-        -- Entering correct code again to disarm
-        press_short;
-        press_short;
-        press_short;
-        press_short;
-
-        wait for 200 ms;
-        assert tb_alarm_siren = '0' report "Error: Siren did not stop after code entry!" severity error;
-        assert tb_system_armed = '0' report "Error: System did not disarm!" severity error;
-
-        -- =========================================================
-        -- 6. Scenario: Sensor Glitch / Debounce Test
-        -- =========================================================
-        report "Scenario 6: Sensor Glitch Test (Short noise)";
-        -- Re-arming
-        press_short; press_short; press_short; press_short;
-        wait for 200 ms;
-
-        -- Very short noise on door sensor (e.g., 10ns)
-        tb_door_raw <= '1';
-        wait for 10 ns; 
-        tb_door_raw <= '0';
-        
-        wait for 50 ms;
-        -- Alarm should *NOT* trigger (if you have debounce logic > 10ms)
-        -- If alarm triggers here - your Sensor Logic is too sensitive to noise
-        if tb_alarm_siren = '1' then
-            report "Warning: System triggered on short glitch (check debounce logic)";
-        else
-            report "System ignored glitch correctly";
-        end if;
-
-        -- =========================================================
-        -- 7. Scenario: Motion Detection Intrusion
-        -- =========================================================
-        report "Scenario 7: Intrusion on Motion Sensor";
-        -- Triggering motion sensor for a long duration
-        tb_motion_raw <= '1';
-        wait for 200 ms;
         tb_motion_raw <= '0';
         
-        wait for 50 ms;
-        assert tb_alarm_siren = '1' report "Error: Motion sensor failed to trigger alarm" severity error;
+        wait for 50 ns;
+        -- ?????: ????? ????? ?????
+        assert tb_alarm_siren = '1' report "Error: Siren did not trigger on double intrusion!" severity error;
 
-        report "Testbench Completed Successfully";
+        -- =========================================================
+        -- 3. ?????? ??? ???? ???? ?????
+        -- =========================================================
+        report "Scenario: Wrong Code Entry during Alarm";
+        press_short; -- '0'
+        press_short; -- '0' (Wrong)
+        
+        wait for 100 ns;
+        -- ?????: ????? ????? ??????
+        assert tb_alarm_siren = '1' report "Error: Siren stopped incorrectly!" severity error;
+
+        -- =========================================================
+        -- 4. ?????? ?????? (??? ????)
+        -- =========================================================
+        report "Scenario: Correct Code Entry (0, 1)";
+        press_short; -- '0'
+        press_long;  -- '1' (Correct)
+
+        wait for 100 ns; 
+        
+        -- ?????: ?????? ????? ??????
+        if tb_alarm_siren = '0' then
+            report "Success: Siren stopped!";
+        else
+            report "Error: Siren keeps ringing after correct code!" severity error;
+        end if;
+        
+        report "Testbench Completed";
         wait;
     end process;
 
