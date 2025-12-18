@@ -51,7 +51,6 @@ architecture behavior of alarm_Control is
     constant VAL_ST_UKNOWN : std_logic_vector(2 downto 0) := "110";
 
 
-
 begin
     alarm_Control_process : process(Clk, Rst)
     begin
@@ -153,7 +152,7 @@ begin
             when ST_ALERT    => s_state_code <= VAL_ST_ALERT;
             when ST_CORRECT  => s_state_code <= VAL_ST_CORRECT;
             when ST_LOCK     => s_state_code <= VAL_ST_LOCK;
-            when ST_ATTEMPTS => s_state_code <= std_logic_vector(to_unsigned(48 + s_attempts, 8));
+            when ST_ATTEMPTS => s_state_code <= std_logic_vector(to_unsigned(48 + s_attempts, 3));
             when others      => s_state_code <= VAL_ST_UKNOWN;
         end case;
     end process STATE_ASCII_GEN;

@@ -1,6 +1,6 @@
 --------------------- Title ------------------------
 -- Project Name: HA_System
--- File Name: HA_System_TB.vhd
+-- File Name: HW_SYSTEM_TB.vhd
 -- Author: Yuval Kogan
 -- Ver: 1
 -- Created Date: 4/12/25
@@ -10,25 +10,25 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-entity tb_HA_System is
+entity HW_SYSTEM_TB is
     -- Testbench has no ports
-end tb_HA_System;
+end HW_SYSTEM_TB;
 
-architecture behavior of tb_HA_System is
+architecture behavior of HW_SYSTEM_TB is
 
     -- Component Declaration
     component HA_System
     port(
-        Clk          : in  std_logic;
-        Rst          : in  std_logic;
-        pass_btn     : in  std_logic;
-        door_raw     : in  std_logic;
-        window_raw   : in  std_logic;
-        motion_raw   : in  std_logic;
-        alarm_siren  : out std_logic;
-        system_armed : out std_logic;
-        sens_dbg     : out std_logic_vector(2 downto 0);
-        display_data : out std_logic_vector(8 downto 0)
+        Clk                 : in  std_logic;
+        Rst                 : in  std_logic;
+        pass_btn            : in  std_logic;
+        door_raw            : in  std_logic;
+        window_raw          : in  std_logic;
+        motion_raw          : in  std_logic;
+        alarm_siren         : out std_logic;
+        system_armed        : out std_logic;
+        sens_dbg            : out std_logic_vector(2 downto 0);
+        output_display_data : out std_logic_vector(7 downto 0)
     );
     end component;
 
@@ -44,7 +44,7 @@ architecture behavior of tb_HA_System is
     signal tb_alarm_siren  : std_logic;
     signal tb_system_armed : std_logic;
     signal tb_sens_dbg     : std_logic_vector(2 downto 0);
-    signal tb_display_data : std_logic_vector(8 downto 0);
+    signal tb_display_data : std_logic_vector(7 downto 0);
 
     -- Clock definition
     constant CLK_PERIOD : time := 10 ns; -- 100 MHz
@@ -67,7 +67,7 @@ begin
         alarm_siren  => tb_alarm_siren,
         system_armed => tb_system_armed,
         sens_dbg     => tb_sens_dbg,
-        display_data => tb_display_data
+        output_display_data => tb_display_data
     );
 
     -- Clock Process
