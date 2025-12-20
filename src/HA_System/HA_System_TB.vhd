@@ -1,3 +1,12 @@
+--------------------- Title ------------------------
+-- Project Name: HA_System
+-- File Name   : HA_System_TB.vhd
+-- Author      : Roni Shifrin
+-- Ver         : 1
+-- Created Date: 04/12/25
+----------------------------------------------------
+
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
@@ -32,16 +41,22 @@ procedure press_btn(constant cycles : in integer; signal btn : out std_logic; si
 begin
     -- Unit Under Test
     uut: entity work.HA_System port map (
-        Clk => tb_Clk, Rst => tb_Rst, pass_btn => tb_pass_btn,
-        door_raw => tb_door_raw, window_raw => tb_window_raw, motion_raw => tb_motion_raw,
-        alarm_siren => tb_alarm_siren, system_armed => tb_system_armed,
-        output_display_data => tb_display_data, status_code_dbg => tb_status_code
+        Clk => tb_Clk,
+        Rst => tb_Rst,
+        pass_btn => tb_pass_btn,
+        door_raw => tb_door_raw,
+        window_raw => tb_window_raw,
+        motion_raw => tb_motion_raw,
+        alarm_siren => tb_alarm_siren,
+        system_armed => tb_system_armed,
+        output_display_data => tb_display_data,
+        status_code_dbg => tb_status_code
     );
 
     -- Clock Generation
     tb_Clk <= not tb_Clk after CLK_PERIOD/2;
 
------------------------------------------------------------
+    -----------------------------------------------------------
     -- ENHANCED MONITORING PROCESS
     -----------------------------------------------------------
     process(tb_status_code, tb_alarm_siren, tb_system_armed, tb_Rst)
@@ -154,7 +169,7 @@ begin
         assert (tb_status_code = "101") report "FAIL: Should be in ST_LOCK (State 5)" severity error;
         report ">>> TEST 3 PASSED: Lockout active. Final display value (dec): " & integer'image(to_integer(unsigned(tb_display_data)));
 
------------------------------------------------------------
+    -----------------------------------------------------------
     -- UPDATED TEST 4: THE RECOVERY
     -----------------------------------------------------------
     report "";

@@ -40,7 +40,7 @@ architecture behavior of alarm_Control is
     signal system_armed_flag : STD_LOGIC := '0';
     signal s_attempts : integer range 0 to 7 := 0;
     signal s_state_code : std_logic_vector(2 downto 0);
-    signal s_lock_cntr : integer range 0 to 25 := 0; -- Used to lock system for 5 Clk cycles
+    signal s_lock_cntr : integer range 0 to 25 := 0; -- Used to lock system
     signal code_ready_prev : std_logic := '0';
 
  

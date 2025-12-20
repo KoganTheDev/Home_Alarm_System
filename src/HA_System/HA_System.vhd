@@ -1,3 +1,12 @@
+--------------------- Title ------------------------
+-- Project Name: HA_System
+-- File Name   : HA_System.vhd
+-- Author      : Roni Shifrin
+-- Ver         : 1
+-- Created Date: 04/12/25
+----------------------------------------------------
+
+
 library ieee;
 use ieee.std_logic_1164.all;
 
@@ -11,9 +20,7 @@ entity HA_System is
         motion_raw   : in  std_logic;
         alarm_siren  : out std_logic;
         system_armed : out std_logic;
-        sens_dbg     : out std_logic_vector(2 downto 0);
         output_display_data : out std_logic_vector(7 downto 0);
-        s_dbg_code_vector   : out std_logic_vector(1 downto 0);
         status_code_dbg     : out std_logic_vector(2 downto 0)
     );
 end HA_System;
@@ -42,9 +49,8 @@ begin
             bit_in=>s_bit_out,
             valid=>s_bit_valid,
             Code_ready=>s_code_ready,
-            code_match=>s_code_match,
-            code_vector=>s_dbg_code_vector);
-
+            code_match=>s_code_match
+            );
     
     U2: entity work.Sensors_logic
     port map (Clk=>Clk,
@@ -79,7 +85,6 @@ begin
             attempts=>s_attempts,
             data=>s_data);
 
-    sens_dbg <= m_c & w_c & d_c;
     output_display_data <= s_data;
     status_code_dbg <= s_state_code;
 end architecture;

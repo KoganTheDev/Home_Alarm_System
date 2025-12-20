@@ -1,3 +1,12 @@
+--------------------- Title ------------------------
+-- Project Name: HA_System
+-- File Name   : alarm_Control_TB.vhd
+-- Author      : Yuval Kogan
+-- Ver         : 1
+-- Created Date: 04/12/25
+----------------------------------------------------
+
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
@@ -80,6 +89,7 @@ begin
         assert S_enable_press = 'Z' report "T1 FAIL: enable_press not High-Z on Reset" severity error;
         assert S_attempts_int = 0   report "T1 FAIL: attempts not 0 on Reset" severity error;
         assert S_state_code = "ZZZ" report "T1 FAIL: state_code not High-Z on Reset" severity error;
+        assert S_system_armed = 'Z' report "T1 FAIL: system_armed not High-Z on Reset" severity error;
         
         S_Rst <= '0';
         wait until rising_edge(S_Clk);
@@ -133,8 +143,8 @@ begin
         S_Rst <= '1';
         wait for 30 ns;
         
-        -- While Rst is high, port should be 'Z'
-        assert S_alarm_siren = 'Z' report "T4 FAIL: Siren Port not High-Z during Reset" severity error;
+        -- Siren flag is NOT controlled by reset, it maintains its state
+        assert S_alarm_siren = '1' report "T4 FAIL: Siren should remain ON during Reset" severity error;
         
         S_Rst <= '0';
         wait for 5 ns; -- Settle time

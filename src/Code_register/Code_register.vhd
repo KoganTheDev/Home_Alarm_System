@@ -76,9 +76,9 @@ begin
         end if;
     end process code_register_process;
 
-    -- Outputs: Removed 'Z' logic to ensure stable simulation values
-    code_vector <= code_reg_int;
-    Code_ready  <= ready_int;
-    code_match  <= match_int;
+    -- Change 'Z' to '0'
+    code_vector <= (others => '0') when Rst = '1' else code_reg_int;
+    Code_ready  <= '0' when Rst = '1' else ready_int;
+    code_match  <= '0' when Rst = '1' else match_int;
 
 end behavior;
