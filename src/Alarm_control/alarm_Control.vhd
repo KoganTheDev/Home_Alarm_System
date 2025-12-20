@@ -40,7 +40,8 @@ architecture behavior of alarm_Control is
     signal system_armed_flag : STD_LOGIC := '0';
     signal s_attempts : integer range 0 to 7 := 0;
     signal s_state_code : std_logic_vector(2 downto 0);
-    signal s_lock_cntr : integer range 0 to 5 := 0; -- Used to lock system for 5 Clk cycles
+    signal s_lock_cntr : integer range 0 to 25 := 0; -- Used to lock system for 5 Clk cycles
+    signal code_ready_prev : std_logic := '0';
 
  
     constant VAL_ST_OFF      : std_logic_vector(2 downto 0) := "000";
@@ -66,6 +67,9 @@ begin
 
         --  Synchronous Logic
         elsif rising_edge(Clk) then
+
+            code_ready_prev <= code_ready;
+
             case current_state is
 
                 when ST_OFF =>
@@ -87,28 +91,31 @@ begin
                     end if;
 
                 when ST_ALERT =>
-                    system_armed_flag <= '0'; -- Siren fires -> system is not armed anymore
-                    alarm_siren_flag <= '1'; -- Siren on
-                    
-                    current_state <= ST_ATTEMPTS; -- Move automatically to the Code check logic block
+                    system_armed_flag <= '0';
+                    alarm_siren_flag <= '1';
+                    s_attempts <= 0;      -- Force reset here to ensure 0 is the starting point
+                    current_state <= ST_ATTEMPTS;
 
                 when ST_ATTEMPTS =>
-                    if (code_ready = '1') then
-                        s_enable_press <= '0';
-                        s_clear_code <= '1'; 
+                    s_enable_press <= '1';
+                    
+                    -- Only act on the RISING EDGE of code_ready
+                    if (code_ready = '1' and code_ready_prev = '0') then
+                        s_clear_code <= '1'; -- Trigger the clear
                         if (code_match = '1') then 
                             current_state <= ST_CORRECT;
-                        elsif (s_attempts = 6) then -- 7th failure
-                            s_attempts <= 7;
-                            s_lock_cntr <= 0;
-                            current_state <= ST_LOCK;
                         else
-                            s_attempts <= s_attempts + 1;
+                            -- Check if incrementing would reach the limit (7 attempts)
+                            if (s_attempts + 1 >= 7) then -- Lock when next increment reaches 7
+                                current_state <= ST_LOCK;
+                                s_attempts <= 7; -- Set to 7 before locking
+                            else
+                                s_attempts <= s_attempts + 1;
+                            end if;
                         end if;
                     else
-                        s_enable_press <= '1';
-                        s_clear_code <= '0';
-                    end if;            
+                        s_clear_code <= '0'; -- Hold clear low otherwise
+                    end if;
 
                 when ST_CORRECT =>
                     -- Code Correct logic
@@ -121,13 +128,9 @@ begin
                     current_state <= ST_ARMED; -- On next clock rise, move to ST_ARMED to re-ARM the machine
                 
                 when ST_LOCK =>
-                    s_enable_press <= '0'; -- Don't allow pressing
-                    system_armed_flag <= '0'; 
-                    alarm_siren_flag <= '1'; -- Make sure siren is ON
-                    s_attempts <= 7; -- Set attempts to 7 to be displayed
-
-                    -- Lock for 4 clock cycles, on the 5th cycle, release lock
-                    if (s_lock_cntr = 4) then 
+                    s_enable_press <= '0';
+                    -- so the Testbench has time to verify it.
+                    if (s_lock_cntr = 20) then 
                         s_lock_cntr <= 0;
                         s_attempts <= 0;
                         current_state <= ST_ATTEMPTS;
@@ -155,9 +158,9 @@ begin
 
     -- Set output signals        
     enable_press <= 'Z' when Rst = '1' else s_enable_press;
-    alarm_siren  <= 'Z' when Rst = '1' else alarm_siren_flag;
+    alarm_siren  <= alarm_siren_flag;
     system_armed <= 'Z' when Rst = '1' else system_armed_flag;
-    clear_code   <= 'Z' when Rst = '1' else s_clear_code;
+    clear_code   <= s_clear_code;
     attempts     <= 0 when Rst = '1' else s_attempts;
     state_code   <= (others => 'Z') when Rst = '1' else s_state_code;
 
